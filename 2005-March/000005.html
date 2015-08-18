@@ -1,0 +1,431 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Lea-svn] r106 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/lea-svn/2005-March/index.html" >
+   <LINK REL="made" HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r106%20-%20trunk&In-Reply-To=%3C200503221223.j2MCNYDL000607%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000004.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Lea-svn] r106 - trunk</H1>
+    <B>Eduardo Robles Elvira at BerliOS</B> 
+    <A HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r106%20-%20trunk&In-Reply-To=%3C200503221223.j2MCNYDL000607%40sheep.berlios.de%3E"
+       TITLE="[Lea-svn] r106 - trunk">edulix at sheep.berlios.de
+       </A><BR>
+    <I>Tue Mar 22 13:23:34 CET 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000004.html">[Lea-svn] r105 - trunk
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: edulix
+Date: 2005-03-22 13:23:27 +0100 (Tue, 22 Mar 2005)
+New Revision: 106
+
+Modified:
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+Log:
+Adding implementation of some more functions (up to ten completed out of ~70) in lea-translator.c and a minor change 
+in lea-translator.h, I had left support for the OPne (not equal expr bool operation)
+
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-03-21 13:49:28 UTC (rev 105)
++++ trunk/lea-translator.c	2005-03-22 12:23:27 UTC (rev 106)
+@@ -827,28 +827,63 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Adds an element to a linked list of expresions
+  * 
+- * \param		
+- * \return	 
++ * \param	next_list	Existing linked list of expresions
++ * \param	actual		Expresion element to add to the list
++ * \return				New linked list containing all the previous \
++ * expresions and the new one
+  */
+-Texpr_list *TRexpr_list(Texpr_list *previous_list, Texpr *actual)
++Texpr_list *TRexpr_list(Texpr_list *next_list, Texpr *actual)
+ {
++	// Returning struct
+ 	Texpr_list *ret;
++	
++	// Allocate needed memory
++	ret	=	malloc(sizeof(Texpr_list));
++	
++	//Initialization
++	ret-&gt;next	=	next_list;
++	ret-&gt;actual	=	actual;
+ 
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
++ * \brief Allocates storage for a boolean expresion value
+  * 
+- * \param		
+- * \return	 
++ * \param	bool_val	Value to preserve
++ * \return				Pointer to the expresion holding the given value
+  */
+ Texpr_bool *TRexpr_bool_val(bool *val)
+ {
++	// Returning struct
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr_bool));
++	ret-&gt;type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage-&gt;type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage-&gt;type)			=	Vintern_bool_val;
++	storage-&gt;storage.bool_val	=	val;
++	
++	// Note that internal vars don't have names:
++	internal_sym-&gt;name			=	(char *)NULL;
++	internal_sym-&gt;storage		=	storage;
++	
++	*(ret-&gt;type) 				=	OPvar_call;
++	ret-&gt;expr_bool.var_call		=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+@@ -866,41 +901,127 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Negates a boolean expresion
+  * 
+- * \param		
+- * \return	 
++ * \param	expr_bool	Boolean expresion to negate
++ * \return				Returns a boolean expresion negating the given one
+  */
+ Texpr_bool *TRexpr_bool_not(Texpr_bool *expr_bool)
+ {
+-	Texpr_bool *ret;
+-
++	// Returning value
++	Texpr_bool		*ret;
++	// Internal intermediate struct
++	Texpr_bool_op	*expr_bool_op;
++	
++	// Allocate needed memory
++	ret					=	malloc(sizeof(Texpr_bool));
++	ret-&gt;type			=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op-&gt;op	=	malloc(sizeof(char));
++	
++	//Initialization
++	*(expr_bool_op-&gt;op)				=	OPnot;
++	expr_bool_op-&gt;left.expr_bool	=	expr_bool;
++	expr_bool_op-&gt;right.expr_bool	=	(Texpr_bool *)NULL;
++	
++	*(ret-&gt;type)					=	OPexpr_bool;
++	ret-&gt;expr_bool.expr_bool		=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a boolean operation with two boolean operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left boolean expresion in the operation
++ * \param	right_expr	Right boolean expresion in the operation
++ * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool_log(char type, Texpr_bool *left_expr, Texpr_bool *right_expr)
+ {
++	// Returning struct
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_bool_op *expr_bool_op;
++	
++	// Allocate needed memory
++	ret					=	malloc(sizeof(Texpr_bool));
++	ret-&gt;type			=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op-&gt;op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '&amp;':
++			*(expr_bool_op-&gt;op)	=	OPand;
++			break;
++		case '|':
++			*(expr_bool_op-&gt;op)	=	OPor;
++			break;
++	}
++	expr_bool_op-&gt;left.expr_bool	=	left_expr;
++	expr_bool_op-&gt;right.expr_bool	=	right_expr;
++	
++	*(ret-&gt;type)					=	OPexpr_bool;
++	ret-&gt;expr_bool.expr_bool		=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a boolean operation with two operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left expresion in the operation
++ * \param	right_expr	Right expresion in the operation
++ * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool(char type, Texpr *left_expr, Texpr *right_expr)
+ {
++	// Returning struct:
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_bool_op *expr_bool_op;
++	
++	// Allocate needed memory
++	ret			=	malloc(sizeof(Texpr_bool));
++	ret-&gt;type	=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op-&gt;op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '=':
++			*(expr_bool_op-&gt;op)	=	OPeq;
++			break;
++		case '&lt;':
++			*(expr_bool_op-&gt;op)	=	OPless;
++			break;
++		case '&gt;':
++			*(expr_bool_op-&gt;op)	=	OPgreater;
++			break;
++		case 'l':
++			*(expr_bool_op-&gt;op)	=	OPle;
++			break;
++		case 'g':
++			*(expr_bool_op-&gt;op)	=	OPge;
++			break;
++		case 'n':
++			*(expr_bool_op-&gt;op)	=	OPne;
++			break;
++	}
++	expr_bool_op-&gt;left.expr		=	left_expr;
++	expr_bool_op-&gt;right.expr	=	right_expr;
++	
++	*(ret-&gt;type)				=	OPexpr_bool;
++	ret-&gt;expr_bool.expr_bool	=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+@@ -1083,15 +1204,55 @@
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for an operation with two operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left expresion in the operation
++ * \param	right_expr	Right expresion in the operation
++ * \return				Pointer to the structure holding the operation
+  */
+ Texpr *TRexpr(char type, Texpr *left_expr, Texpr *right_expr)
+ {
++	// Returning struct:
+ 	Texpr *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_op *expr_op;
++	
++	// Allocate needed memory
++	ret			=	malloc(sizeof(Texpr));
++	ret-&gt;type	=	malloc(sizeof(char));
++	
++	expr_op		=	malloc(sizeof(Texpr_op));
++	expr_op-&gt;op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '+':
++			*(expr_op-&gt;op)	=	OPsum;
++			break;
++		case '-':
++			*(expr_op-&gt;op)	=	OPsub;
++			break;
++		case '*':
++			*(expr_op-&gt;op)	=	OPmult;
++			break;
++		case '/':
++			*(expr_op-&gt;op)	=	OPdiv;
++			break;
++		case '%':
++			*(expr_op-&gt;op)	=	OPmod;
++			break;
++		case '^':
++			*(expr_op-&gt;op)	=	OPexp;
++			break;
++	}
++	expr_op-&gt;left	=	left_expr;
++	expr_op-&gt;right	=	right_expr;
++	
++	*(ret-&gt;type)	=	OPexpr;
++	ret-&gt;expr.expr	=	expr_op;
++	
+ 	return ret;
+ }
+ 
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-03-21 13:49:28 UTC (rev 105)
++++ trunk/lea-translator.h	2005-03-22 12:23:27 UTC (rev 106)
+@@ -85,37 +85,38 @@
+ 	#define OPgreater				44
+ 	#define OPle					45
+ 	#define OPge					46
++	#define OPne					47
+ 	
+-	#define OPsum					47
+-	#define OPsub					48
+-	#define OPmult					49
+-	#define OPdiv					50
+-	#define OPmod					51
+-	#define OPexp					52
++	#define OPsum					48
++	#define OPsub					49
++	#define OPmult					50
++	#define OPdiv					51
++	#define OPmod					52
++	#define OPexp					53
+ 	
+-	#define Valg					53
+-	#define Vfunc					54
+-	#define Vproc					55
++	#define Valg					54
++	#define Vfunc					55
++	#define Vproc					56
+ 	
+-	#define Vif_statement			56
+-	#define Vassign_statement		57
+-	#define Vmult_assign_statement	58
+-	#define Vwhile_loop				59
+-	#define Vfromto_loop			60
+-	#define Vmethod_call			61
+-	#define Vreserved_call			62
++	#define Vif_statement			57
++	#define Vassign_statement		58
++	#define Vmult_assign_statement	59
++	#define Vwhile_loop				60
++	#define Vfromto_loop			61
++	#define Vmethod_call			62
++	#define Vreserved_call			63
+ 	
+-	#define Valgorithm				63
+-	#define Vfunction				64
+-	#define Vprocedure				65
++	#define Valgorithm				64
++	#define Vfunction				65
++	#define Vprocedure				66
+ 	
+-	#define OPexpr					66
+-	#define OPexpr_bool				67
+-	#define OPop					68
+-	#define OPvar_call				69
+-	#define OParray_call			70
+-	#define OPmethod_call			71
+-	#define OPreserved_call			72
++	#define OPexpr					67
++	#define OPexpr_bool				68
++	#define OPop					69
++	#define OPvar_call				70
++	#define OParray_call			71
++	#define OPmethod_call			72
++	#define OPreserved_call			73
+ 	
+ 	/****************************
+ 	*     Types definitions     *
+@@ -475,7 +476,7 @@
+ 	 * In this special case, we use a variable char *op; that implitily
+ 	 * specifies which type will be used in left and right vars:
+ 	 *  - OPnot (for right.expr_bool = NULL, left.expr_bool)
+-	 *  - OPeq/OPless/OPgreater/OPle/OPge (for right.expr, left.expr)
++	 *  - OPeq/OPless/OPgreater/OPle/OPge/OPne (for right.expr, left.expr)
+ 	 *  - OPand/OPor (for right.expr_bool, left.expr_bool)
+ 	 */
+ 	struct Texpr_bool_op {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000004.html">[Lea-svn] r105 - trunk
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/lea-svn">More information about the Lea-svn
+mailing list</a><br>
+</body></html>

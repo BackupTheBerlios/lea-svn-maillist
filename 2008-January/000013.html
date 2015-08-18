@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Lea-svn] r115 - in trunk/lea-interpreter: . .settings
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/lea-svn/2008-January/index.html" >
+   <LINK REL="made" HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r115%20-%20in%20trunk/lea-interpreter%3A%20.%20.settings&In-Reply-To=%3C200801121121.m0CBLYKa014794%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Lea-svn] r115 - in trunk/lea-interpreter: . .settings</H1>
+    <B>edulix at mail.berlios.de</B> 
+    <A HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r115%20-%20in%20trunk/lea-interpreter%3A%20.%20.settings&In-Reply-To=%3C200801121121.m0CBLYKa014794%40sheep.berlios.de%3E"
+       TITLE="[Lea-svn] r115 - in trunk/lea-interpreter: . .settings">edulix at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 12 12:21:34 CET 2008</I>
+    <P><UL>
+        
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: edulix
+Date: 2008-01-12 12:21:31 +0100 (Sat, 12 Jan 2008)
+New Revision: 115
+
+Added:
+   trunk/lea-interpreter/.antlr-eclipse
+   trunk/lea-interpreter/.classpath
+   trunk/lea-interpreter/.project
+   trunk/lea-interpreter/.settings/
+   trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs
+   trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs
+Modified:
+   trunk/lea-interpreter/README
+Log:
+Making it a eclipse project and updating the README accordingly
+
+
+
+Added: trunk/lea-interpreter/.antlr-eclipse
+===================================================================
+--- trunk/lea-interpreter/.antlr-eclipse	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.antlr-eclipse	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,6 @@
++&lt;?xml version='1.0' ?&gt; 
++&lt;settings&gt;
++  &lt;resource name='**ANTLR-ECLIPSE-PLUGIN**'&gt;
++    &lt;property name='pluginVersion' value='2.7.6' /&gt;
++  &lt;/resource&gt;
++&lt;/settings&gt;
+
+Added: trunk/lea-interpreter/.classpath
+===================================================================
+--- trunk/lea-interpreter/.classpath	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.classpath	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,7 @@
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
++&lt;classpath&gt;
++	&lt;classpathentry kind=&quot;src&quot; path=&quot;&quot;/&gt;
++	&lt;classpathentry kind=&quot;var&quot; path=&quot;ANTLR_HOME/antlr.jar&quot; sourcepath=&quot;ANTLR_HOME/antlrsrc.zip&quot;/&gt;
++	&lt;classpathentry kind=&quot;con&quot; path=&quot;org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/SUN 6&quot;/&gt;
++	&lt;classpathentry kind=&quot;output&quot; path=&quot;&quot;/&gt;
++&lt;/classpath&gt;
+
+Added: trunk/lea-interpreter/.project
+===================================================================
+--- trunk/lea-interpreter/.project	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.project	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,33 @@
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
++&lt;projectDescription&gt;
++	&lt;name&gt;lea-interpreter&lt;/name&gt;
++	&lt;comment&gt;&lt;/comment&gt;
++	&lt;projects&gt;
++	&lt;/projects&gt;
++	&lt;buildSpec&gt;
++		&lt;buildCommand&gt;
++			&lt;name&gt;org.antlr.eclipse.core.antlrbuilder&lt;/name&gt;
++			&lt;arguments&gt;
++			&lt;/arguments&gt;
++		&lt;/buildCommand&gt;
++		&lt;buildCommand&gt;
++			&lt;name&gt;org.eclipse.jdt.core.javabuilder&lt;/name&gt;
++			&lt;arguments&gt;
++			&lt;/arguments&gt;
++		&lt;/buildCommand&gt;
++		&lt;buildCommand&gt;
++			&lt;name&gt;org.antlr.eclipse.core.warningcleanerbuilder&lt;/name&gt;
++			&lt;arguments&gt;
++			&lt;/arguments&gt;
++		&lt;/buildCommand&gt;
++		&lt;buildCommand&gt;
++			&lt;name&gt;org.antlr.eclipse.core.smapbuilder&lt;/name&gt;
++			&lt;arguments&gt;
++			&lt;/arguments&gt;
++		&lt;/buildCommand&gt;
++	&lt;/buildSpec&gt;
++	&lt;natures&gt;
++		&lt;nature&gt;org.antlr.eclipse.core.antlrnature&lt;/nature&gt;
++		&lt;nature&gt;org.eclipse.jdt.core.javanature&lt;/nature&gt;
++	&lt;/natures&gt;
++&lt;/projectDescription&gt;
+
+Added: trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs
+===================================================================
+--- trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,7 @@
++#Sun Nov 18 15:07:07 GMT+01:00 2007
++org.eclipse.jdt.core.compiler.problem.enumIdentifier=error
++org.eclipse.jdt.core.compiler.problem.assertIdentifier=error
++eclipse.preferences.version=1
++org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6
++org.eclipse.jdt.core.compiler.source=1.6
++org.eclipse.jdt.core.compiler.compliance=1.6
+
+Added: trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs
+===================================================================
+--- trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,3 @@
++#Sun Nov 18 15:07:07 GMT+01:00 2007
++eclipse.preferences.version=1
++internal.default.compliance=default
+
+Modified: trunk/lea-interpreter/README
+===================================================================
+--- trunk/lea-interpreter/README	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/README	2008-01-12 11:21:31 UTC (rev 115)
+@@ -5,3 +5,9 @@
+ 
+ Licenced under the GPL 2.0 - see 'COPYING'
+ 
++How to execute
++--------------
++
++At the moment the easiest way to test this version of the interpreter
++is importing this directory (trunk/lea/interpreter/) into a Eclipse
++workspace.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/lea-svn">More information about the Lea-svn
+mailing list</a><br>
+</body></html>

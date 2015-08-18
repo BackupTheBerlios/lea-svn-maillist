@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Lea-svn] r112 - in trunk: . katehighlight
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/lea-svn/2005-May/index.html" >
+   <LINK REL="made" HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r112%20-%20in%20trunk%3A%20.%20katehighlight&In-Reply-To=%3C200505211410.j4LEAM3J010828%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000009.html">
+   <LINK REL="Next"  HREF="000011.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Lea-svn] r112 - in trunk: . katehighlight</H1>
+    <B>Eduardo Robles Elvira at BerliOS</B> 
+    <A HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r112%20-%20in%20trunk%3A%20.%20katehighlight&In-Reply-To=%3C200505211410.j4LEAM3J010828%40sheep.berlios.de%3E"
+       TITLE="[Lea-svn] r112 - in trunk: . katehighlight">edulix at sheep.berlios.de
+       </A><BR>
+    <I>Sat May 21 16:10:22 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000009.html">[Lea-svn] r111 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000011.html">[Lea-svn] r113 - in trunk: . katehighlight
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: edulix
+Date: 2005-05-21 16:10:14 +0200 (Sat, 21 May 2005)
+New Revision: 112
+
+Added:
+   trunk/katehighlight/
+   trunk/katehighlight/lea.xml
+Log:
+Adding syntax highlighting for kate
+Edulix
+
+
+
+Added: trunk/katehighlight/lea.xml
+===================================================================
+--- trunk/katehighlight/lea.xml	2005-05-02 17:11:32 UTC (rev 111)
++++ trunk/katehighlight/lea.xml	2005-05-21 14:10:14 UTC (rev 112)
+@@ -0,0 +1,37 @@
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
++&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
++&lt;language name=&quot;LEA&quot; version=&quot;1.0&quot; kateversion=&quot;2.4&quot; section=&quot;Scripts&quot; extensions=&quot;*.lea&quot; priority=&quot;9&quot;&gt;
++
++&lt;!-- (c) 2005 by Eduardo Robles Elvira, <A HREF="https://lists.berlios.de/mailman/listinfo/lea-svn">edulix at spymac.com</A>
++		Released under the LGPL--&gt;
++
++&lt;highlighting&gt;
++    &lt;list name=&quot;keywords&quot;&gt;
++		&lt;item&gt;prog&lt;/item&gt;
++		&lt;item&gt;alg&lt;/item&gt;
++		&lt;item&gt;func&lt;/item&gt;
++		&lt;item&gt;proc&lt;/item&gt;
++		&lt;item&gt;fin&lt;/item&gt;
++		&lt;item&gt;ent&lt;/item&gt;
++		&lt;item&gt;sal&lt;/item&gt;
++		&lt;item&gt;entsal&lt;/item&gt;
++		&lt;item&gt;ent/sal&lt;/item&gt;
++		&lt;item&gt;cons&lt;/item&gt;
++		&lt;item&gt;tipos&lt;/item&gt;
++		&lt;item&gt;reg&lt;/item&gt;
++		&lt;item&gt;freg&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++	&lt;/list&gt;
++	&lt;list name=&quot;types&quot;&gt;
++		&lt;item&gt;logico&lt;/item&gt;
++		&lt;item&gt;entero&lt;/item&gt;
++		&lt;item&gt;real&lt;/item&gt;
++		&lt;item&gt;fichero&lt;/item&gt;
++		&lt;item&gt;tabla&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++		&lt;item&gt;&lt;/item&gt;
++	&lt;/list&gt;
++&lt;/highlight&gt;
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000009.html">[Lea-svn] r111 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000011.html">[Lea-svn] r113 - in trunk: . katehighlight
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/lea-svn">More information about the Lea-svn
+mailing list</a><br>
+</body></html>

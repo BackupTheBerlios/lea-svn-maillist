@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Lea-svn] r113 - in trunk: . katehighlight
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/lea-svn/2005-May/index.html" >
+   <LINK REL="made" HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r113%20-%20in%20trunk%3A%20.%20katehighlight&In-Reply-To=%3C200505211429.j4LETJ4g014058%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000010.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Lea-svn] r113 - in trunk: . katehighlight</H1>
+    <B>Eduardo Robles Elvira at BerliOS</B> 
+    <A HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r113%20-%20in%20trunk%3A%20.%20katehighlight&In-Reply-To=%3C200505211429.j4LETJ4g014058%40sheep.berlios.de%3E"
+       TITLE="[Lea-svn] r113 - in trunk: . katehighlight">edulix at sheep.berlios.de
+       </A><BR>
+    <I>Sat May 21 16:29:19 CEST 2005</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000010.html">[Lea-svn] r112 - in trunk: . katehighlight
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: edulix
+Date: 2005-05-21 16:29:18 +0200 (Sat, 21 May 2005)
+New Revision: 113
+
+Modified:
+   trunk/Makefile
+   trunk/katehighlight/lea.xml
+Log:
+katehighlight/lea.xml:
+	Updating lea syntax highlighting in kde
+Makefile:
+	Now syntax highlighting can be installed via &quot;make kde&quot;
+
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2005-05-21 14:10:14 UTC (rev 112)
++++ trunk/Makefile	2005-05-21 14:29:18 UTC (rev 113)
+@@ -12,6 +12,8 @@
+ LEX=flex
+ YACC=bison
+ 
++KDEDIR=/usr
++
+ lea: $(OBJS)
+ 	$(LEX) $(LEX_SRC)
+ 	$(YACC) --verbose -d $(YACC_SRC)
+@@ -29,3 +31,6 @@
+ wc:
+ 	wc -l $(WRITTEN) | tail -n 1
+ 
++kde:
++	cp katehighlight/lea.xml $(KDEDIR)/share/apps/katepart/syntax/
++
+
+Modified: trunk/katehighlight/lea.xml
+===================================================================
+--- trunk/katehighlight/lea.xml	2005-05-21 14:10:14 UTC (rev 112)
++++ trunk/katehighlight/lea.xml	2005-05-21 14:29:18 UTC (rev 113)
+@@ -1,37 +1,185 @@
+ &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+-&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+-&lt;language name=&quot;LEA&quot; version=&quot;1.0&quot; kateversion=&quot;2.4&quot; section=&quot;Scripts&quot; extensions=&quot;*.lea&quot; priority=&quot;9&quot;&gt;
++&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;
++		  [
++		  &lt;!ENTITY var		&quot;[A-Za-z][\w_]*&quot;&gt;
++   ]&gt;
++&lt;language name=&quot;LEA&quot; version=&quot;1.0&quot; kateversion=&quot;2.4&quot; section=&quot;Scripts&quot; extensions=&quot;*.lea&quot; priority=&quot;20&quot;
++		  author=&quot;Eduardo Robles Elvira (<A HREF="https://lists.berlios.de/mailman/listinfo/lea-svn">edulix at spymac.com</A>)&quot; license=&quot;LGPL&quot;&gt;
+ 
+-&lt;!-- (c) 2005 by Eduardo Robles Elvira, <A HREF="https://lists.berlios.de/mailman/listinfo/lea-svn">edulix at spymac.com</A>
+-		Released under the LGPL--&gt;
+-
+-&lt;highlighting&gt;
+-    &lt;list name=&quot;keywords&quot;&gt;
+-		&lt;item&gt;prog&lt;/item&gt;
+-		&lt;item&gt;alg&lt;/item&gt;
+-		&lt;item&gt;func&lt;/item&gt;
+-		&lt;item&gt;proc&lt;/item&gt;
+-		&lt;item&gt;fin&lt;/item&gt;
+-		&lt;item&gt;ent&lt;/item&gt;
+-		&lt;item&gt;sal&lt;/item&gt;
+-		&lt;item&gt;entsal&lt;/item&gt;
+-		&lt;item&gt;ent/sal&lt;/item&gt;
+-		&lt;item&gt;cons&lt;/item&gt;
+-		&lt;item&gt;tipos&lt;/item&gt;
+-		&lt;item&gt;reg&lt;/item&gt;
+-		&lt;item&gt;freg&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-	&lt;/list&gt;
+-	&lt;list name=&quot;types&quot;&gt;
+-		&lt;item&gt;logico&lt;/item&gt;
+-		&lt;item&gt;entero&lt;/item&gt;
+-		&lt;item&gt;real&lt;/item&gt;
+-		&lt;item&gt;fichero&lt;/item&gt;
+-		&lt;item&gt;tabla&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-		&lt;item&gt;&lt;/item&gt;
+-	&lt;/list&gt;
+-&lt;/highlight&gt;
+\ No newline at end of file
++	&lt;highlighting&gt;
++		&lt;list name=&quot;keywords&quot;&gt;
++			&lt;item&gt;cons&lt;/item&gt;
++			&lt;item&gt;tipos&lt;/item&gt;
++			&lt;item&gt;var&lt;/item&gt;
++			&lt;item&gt;dev&lt;/item&gt;
++			&lt;item&gt;prin&lt;/item&gt;
++			
++			&lt;item&gt;ent&lt;/item&gt;
++			&lt;item&gt;sal&lt;/item&gt;
++			&lt;item&gt;entsal&lt;/item&gt;
++			&lt;item&gt;ent/sal&lt;/item&gt;
++			
++			&lt;item&gt;|&lt;/item&gt;
++			&lt;item&gt;otras&lt;/item&gt;
++			&lt;item&gt;nula&lt;/item&gt;
++			&lt;item&gt;hasta&lt;/item&gt;
++			&lt;item&gt;nula&lt;/item&gt;
++			&lt;item&gt;tabla&lt;/item&gt;
++			
++			&lt;item&gt;cierto&lt;/item&gt;
++			&lt;item&gt;verdadero&lt;/item&gt;
++			&lt;item&gt;falso&lt;/item&gt;
++			
++			&lt;item&gt;y&lt;/item&gt;
++			&lt;item&gt;o&lt;/item&gt;
++			&lt;item&gt;no&lt;/item&gt;
++		&lt;/list&gt;
++		
++		&lt;list name=&quot;functions&quot;&gt;
++			&lt;item&gt;escribir&lt;/item&gt;
++			&lt;item&gt;leer&lt;/item&gt;
++			&lt;item&gt;truncar&lt;/item&gt;
++			&lt;item&gt;redondear&lt;/item&gt;
++			&lt;item&gt;abrir&lt;/item&gt;
++			&lt;item&gt;cerrar&lt;/item&gt;
++		&lt;/list&gt;
++		
++		&lt;list name=&quot;types&quot;&gt;
++			&lt;item&gt;logico&lt;/item&gt;
++			&lt;item&gt;entero&lt;/item&gt;
++			&lt;item&gt;real&lt;/item&gt;
++			&lt;item&gt;caracter&lt;/item&gt;
++			&lt;item&gt;cadena&lt;/item&gt;
++			&lt;item&gt;fichero&lt;/item&gt;
++			&lt;item&gt;flujo&lt;/item&gt;
++			&lt;item&gt;de&lt;/item&gt;
++			&lt;item&gt;entrada&lt;/item&gt;
++			&lt;item&gt;salida&lt;/item&gt;
++		&lt;/list&gt;
++		
++		&lt;list name=&quot;blocks&quot;&gt;
++			&lt;item&gt;prog&lt;/item&gt;
++			&lt;item&gt;alg&lt;/item&gt;
++			&lt;item&gt;func&lt;/item&gt;
++			&lt;item&gt;proc&lt;/item&gt;
++		&lt;/list&gt;
++		
++		&lt;contexts&gt;
++			&lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#stay&quot; name=&quot;Normal Text&quot; &gt;
++				&lt;keyword attribute=&quot;Keyword&quot;	context=&quot;#stay&quot;			String=&quot;keywords&quot;/&gt;
++				&lt;keyword attribute=&quot;Builtins&quot;	context=&quot;#stay&quot;			String=&quot;functions&quot;/&gt;
++				
++				&lt;DetectChar attribute=&quot;String&quot; context=&quot;String&quot; char=&quot;&quot;&quot;/&gt;
++				
++				&lt;Float		attribute=&quot;Float&quot;	context=&quot;#stay&quot;/&gt;
++				&lt;Int		attribute=&quot;Decimal&quot;	context=&quot;#stay&quot;/&gt;
++				&lt;HlCChar	attribute=&quot;Char&quot;	context=&quot;#stay&quot;/&gt;
++				
++				&lt;IncludeRules context=&quot;##Doxygen&quot; /&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;Commentar 1&quot; char=&quot;#&quot; char1=&quot;!&quot;/&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;Commentar 2&quot; char=&quot;/&quot; char1=&quot;/&quot;/&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;Commentar 3&quot; char=&quot;/&quot; char1=&quot;*&quot; beginRegion=&quot;Comment&quot;/&gt;
++				
++				&lt;RegExpr attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;si&quot; beginRegion=&quot;Region1&quot;/&gt;
++				&lt;StringDetect attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;fsi&quot; endRegion=&quot;Region1&quot;/&gt;
++				
++				&lt;RegExpr attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;mientras&quot; beginRegion=&quot;Region2&quot;/&gt;
++				&lt;StringDetect attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;fm&quot; endRegion=&quot;Region2&quot;/&gt;
++				
++				&lt;RegExpr attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;desde&quot; beginRegion=&quot;Region3&quot;/&gt;
++				&lt;StringDetect attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;fd&quot; endRegion=&quot;Region3&quot;/&gt;
++				
++				&lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;blocks&quot; beginRegion=&quot;Region4&quot;/&gt;
++				&lt;StringDetect attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;fin&quot; endRegion=&quot;Region4&quot;/&gt;
++				
++				&lt;RegExpr attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;reg&quot; beginRegion=&quot;Region5&quot;/&gt;
++				&lt;StringDetect attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;freg&quot; endRegion=&quot;Region5&quot;/&gt;
++				
++				&lt;DetectChar attribute=&quot;Symbol&quot; context=&quot;#stay&quot; char=&quot;{&quot; beginRegion=&quot;Brace1&quot; /&gt;
++				&lt;DetectChar attribute=&quot;Symbol&quot; context=&quot;#stay&quot; char=&quot;}&quot; endRegion=&quot;Brace1&quot; /&gt;
++				
++				&lt;AnyChar attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;+\-*/%^&gt;&lt;=&quot; /&gt;
++				&lt;RegExpr attribute=&quot;Normal Text&quot; context=&quot;Function&quot; String=&quot;&var;\s*(\()&quot; lookAhead=&quot;true&quot;/&gt;
++				&lt;RegExpr attribute=&quot;Data Type&quot; context=&quot;Data&quot; String=&quot;:(\s*&var;)+&quot; lookAhead=&quot;true&quot;/&gt;
++				&lt;RegExpr attribute=&quot;Variable&quot; context=&quot;#stay&quot; String=&quot;&var;&quot;/&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;Data&quot; attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot;&gt;
++				&lt;AnyChar attribute=&quot;Normal Text&quot; context=&quot;#pop&quot; String=&quot;,;)&quot;/&gt;
++				
++				&lt;Float	attribute=&quot;Float&quot;	context=&quot;#stay&quot;/&gt;
++				&lt;Int	attribute=&quot;Decimal&quot;	context=&quot;#stay&quot;/&gt;
++				
++				&lt;IncludeRules context=&quot;##Doxygen&quot; /&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;Commentar 2&quot; char=&quot;/&quot; char1=&quot;/&quot;/&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;Commentar 3&quot; char=&quot;/&quot; char1=&quot;*&quot; beginRegion=&quot;Comment&quot;/&gt;
++				
++				&lt;DetectChar attribute=&quot;Normal Text&quot; context=&quot;Matrix Index&quot; char=&quot;[&quot; /&gt;
++				&lt;DetectChar attribute=&quot;Data Type&quot; context=&quot;#stay&quot; char=&quot;y&quot; /&gt;
++				&lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;keywords&quot;/&gt;
++				&lt;keyword attribute=&quot;Builtin Data Type&quot; context=&quot;#stay&quot; String=&quot;types&quot;/&gt;
++				&lt;RegExpr attribute=&quot;Data Type&quot; context=&quot;#stay&quot; String=&quot;&var;&quot;/&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;Matrix Index&quot; attribute=&quot;Normal Text&quot; dynamic=&quot;true&quot;  lineEndContext=&quot;#pop&quot;&gt;
++				&lt;AnyChar attribute=&quot;Normal Text&quot; context=&quot;#pop&quot; String=&quot;]&quot;/&gt;
++				
++				&lt;Float	attribute=&quot;Float&quot;	context=&quot;#stay&quot;/&gt;
++				&lt;Int	attribute=&quot;Decimal&quot;	context=&quot;#stay&quot;/&gt;
++				&lt;RegExpr attribute=&quot;Variable&quot; context=&quot;#stay&quot; String=&quot;&var;&quot;/&gt;
++			&lt;/context&gt;
++			
++&lt;!-- 			 TODO: Eliminate dynamic--&gt;
++			&lt;context name=&quot;Function&quot; attribute=&quot;Normal Text&quot; dynamic=&quot;true&quot;  lineEndContext=&quot;#pop&quot;&gt;
++				&lt;RegExpr attribute=&quot;Function&quot; context=&quot;#pop&quot; String=&quot;&var;&quot;/&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;String&quot; attribute=&quot;String&quot; lineEndContext=&quot;#pop&quot;&gt;
++				&lt;LineContinue attribute=&quot;String&quot; context=&quot;#stay&quot;/&gt;
++				&lt;HlCStringChar attribute=&quot;Char&quot; context=&quot;#stay&quot;/&gt;
++				&lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&quot;&quot;/&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;Commentar 1&quot; attribute=&quot;Comment&quot; lineEndContext=&quot;#pop&quot;&gt;
++				&lt;DetectSpaces /&gt;
++				&lt;DetectIdentifier /&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;Commentar 2&quot; attribute=&quot;Comment&quot; lineEndContext=&quot;#pop&quot;&gt;
++				&lt;DetectSpaces /&gt;
++				&lt;IncludeRules context=&quot;##Alerts&quot; /&gt;
++				&lt;DetectIdentifier /&gt;
++			&lt;/context&gt;
++			
++			&lt;context name=&quot;Commentar 3&quot; attribute=&quot;Comment&quot; lineEndContext=&quot;#stay&quot;&gt;
++				&lt;DetectSpaces /&gt;
++				&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; endRegion=&quot;Comment&quot;/&gt;
++				&lt;IncludeRules context=&quot;##Alerts&quot; /&gt;
++				&lt;DetectIdentifier /&gt;
++      		&lt;/context&gt;
++		&lt;/contexts&gt;
++		
++		&lt;itemDatas&gt;
++			&lt;itemData name=&quot;Normal Text&quot;		defStyleNum=&quot;dsNormal&quot; /&gt;
++			&lt;itemData name=&quot;Keyword&quot;			defStyleNum=&quot;dsKeyword&quot; /&gt;
++			&lt;itemData name=&quot;Variable&quot;			defStyleNum=&quot;dsBaseN&quot;/&gt;
++			&lt;itemData name=&quot;Char&quot;				defStyleNum=&quot;dsChar&quot; /&gt;
++			&lt;itemData name=&quot;Function&quot;			defStyleNum=&quot;dsNormal&quot; color=&quot;#008000&quot;/&gt;
++			&lt;itemData name=&quot;Builtins&quot;			defStyleNum=&quot;dsFunction&quot;/&gt;
++			&lt;itemData name=&quot;Data Type&quot;			defStyleNum=&quot;dsDataType&quot;/&gt;
++			&lt;itemData name=&quot;Builtin Data Type&quot;	defStyleNum=&quot;dsDataType&quot; bold=&quot;1&quot;/&gt;
++			&lt;itemData name=&quot;Decimal&quot;			defStyleNum=&quot;dsDecVal&quot;/&gt;
++			&lt;itemData name=&quot;Float&quot;				defStyleNum=&quot;dsFloat&quot;/&gt;
++			&lt;itemData name=&quot;String&quot;				defStyleNum=&quot;dsString&quot; /&gt;
++      		&lt;itemData name=&quot;Comment&quot;			defStyleNum=&quot;dsComment&quot;/&gt;
++		&lt;/itemDatas&gt;
++	&lt;/highlighting&gt;
++	
++	&lt;general&gt;
++		&lt;comments&gt;
++			&lt;comment name=&quot;singleLine&quot; start=&quot;//&quot; /&gt;
++			&lt;comment name=&quot;multiLine&quot; start=&quot;/*&quot; end=&quot;*/&quot; region=&quot;Comment&quot;/&gt;
++		&lt;/comments&gt;
++		&lt;keywords casesensitive=&quot;1&quot; /&gt;
++  	&lt;/general&gt;
++&lt;/language&gt;
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000010.html">[Lea-svn] r112 - in trunk: . katehighlight
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/lea-svn">More information about the Lea-svn
+mailing list</a><br>
+</body></html>

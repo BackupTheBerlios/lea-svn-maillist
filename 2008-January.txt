@@ -1,0 +1,127 @@
+From edulix at mail.berlios.de  Sat Jan 12 12:21:34 2008
+From: edulix at mail.berlios.de (edulix at mail.berlios.de)
+Date: Sat, 12 Jan 2008 12:21:34 +0100
+Subject: [Lea-svn] r115 - in trunk/lea-interpreter: . .settings
+Message-ID: <200801121121.m0CBLYKa014794@sheep.berlios.de>
+
+Author: edulix
+Date: 2008-01-12 12:21:31 +0100 (Sat, 12 Jan 2008)
+New Revision: 115
+
+Added:
+   trunk/lea-interpreter/.antlr-eclipse
+   trunk/lea-interpreter/.classpath
+   trunk/lea-interpreter/.project
+   trunk/lea-interpreter/.settings/
+   trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs
+   trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs
+Modified:
+   trunk/lea-interpreter/README
+Log:
+Making it a eclipse project and updating the README accordingly
+
+
+
+Added: trunk/lea-interpreter/.antlr-eclipse
+===================================================================
+--- trunk/lea-interpreter/.antlr-eclipse	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.antlr-eclipse	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,6 @@
++<?xml version='1.0' ?> 
++<settings>
++  <resource name='**ANTLR-ECLIPSE-PLUGIN**'>
++    <property name='pluginVersion' value='2.7.6' />
++  </resource>
++</settings>
+
+Added: trunk/lea-interpreter/.classpath
+===================================================================
+--- trunk/lea-interpreter/.classpath	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.classpath	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry kind="src" path=""/>
++	<classpathentry kind="var" path="ANTLR_HOME/antlr.jar" sourcepath="ANTLR_HOME/antlrsrc.zip"/>
++	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/SUN 6"/>
++	<classpathentry kind="output" path=""/>
++</classpath>
+
+Added: trunk/lea-interpreter/.project
+===================================================================
+--- trunk/lea-interpreter/.project	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.project	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,33 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<projectDescription>
++	<name>lea-interpreter</name>
++	<comment></comment>
++	<projects>
++	</projects>
++	<buildSpec>
++		<buildCommand>
++			<name>org.antlr.eclipse.core.antlrbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.eclipse.jdt.core.javabuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.antlr.eclipse.core.warningcleanerbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.antlr.eclipse.core.smapbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++	</buildSpec>
++	<natures>
++		<nature>org.antlr.eclipse.core.antlrnature</nature>
++		<nature>org.eclipse.jdt.core.javanature</nature>
++	</natures>
++</projectDescription>
+
+Added: trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs
+===================================================================
+--- trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.settings/org.eclipse.jdt.core.prefs	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,7 @@
++#Sun Nov 18 15:07:07 GMT+01:00 2007
++org.eclipse.jdt.core.compiler.problem.enumIdentifier=error
++org.eclipse.jdt.core.compiler.problem.assertIdentifier=error
++eclipse.preferences.version=1
++org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6
++org.eclipse.jdt.core.compiler.source=1.6
++org.eclipse.jdt.core.compiler.compliance=1.6
+
+Added: trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs
+===================================================================
+--- trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/.settings/org.eclipse.jdt.ui.prefs	2008-01-12 11:21:31 UTC (rev 115)
+@@ -0,0 +1,3 @@
++#Sun Nov 18 15:07:07 GMT+01:00 2007
++eclipse.preferences.version=1
++internal.default.compliance=default
+
+Modified: trunk/lea-interpreter/README
+===================================================================
+--- trunk/lea-interpreter/README	2008-01-12 11:16:36 UTC (rev 114)
++++ trunk/lea-interpreter/README	2008-01-12 11:21:31 UTC (rev 115)
+@@ -5,3 +5,9 @@
+ 
+ Licenced under the GPL 2.0 - see 'COPYING'
+ 
++How to execute
++--------------
++
++At the moment the easiest way to test this version of the interpreter
++is importing this directory (trunk/lea/interpreter/) into a Eclipse
++workspace.
+
+
+

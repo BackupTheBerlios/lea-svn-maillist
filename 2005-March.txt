@@ -1,0 +1,1573 @@
+From edulix at sheep.berlios.de  Sat Mar 12 15:49:00 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sat, 12 Mar 2005 15:49:00 +0100
+Subject: [Lea-svn] r101 - trunk
+Message-ID: <200503121449.j2CEn0FE030544@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-12 15:48:59 +0100 (Sat, 12 Mar 2005)
+New Revision: 101
+
+Modified:
+   trunk/Makefile
+Log:
+Adapting the Makefile to usea lea.tab.{c,h} files instead of y.tab.{c,h} files
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2005-03-11 12:05:28 UTC (rev 100)
++++ trunk/Makefile	2005-03-12 14:48:59 UTC (rev 101)
+@@ -1,6 +1,6 @@
+ all: lea
+ 
+-TMPS=lex.yy.c y.tab.c
++TMPS=lex.yy.c lea.tab.c
+ OBJS=lea-translator.o
+ LEX_SRC=lea.l
+ YACC_SRC=$(LEX_SRC:.l=.y)
+
+
+
+From edulix at sheep.berlios.de  Sat Mar 12 15:50:30 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sat, 12 Mar 2005 15:50:30 +0100
+Subject: [Lea-svn] r102 - trunk
+Message-ID: <200503121450.j2CEoU9f030721@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-12 15:50:29 +0100 (Sat, 12 Mar 2005)
+New Revision: 102
+
+Modified:
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+   trunk/lea.l
+   trunk/lea.y
+Log:
+Many small changes so that the whole thing compiles ! Have you heard? it
+now compiles ! :-)
+
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-03-12 14:48:59 UTC (rev 101)
++++ trunk/lea-translator.c	2005-03-12 14:50:29 UTC (rev 102)
+@@ -78,7 +78,7 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRfunction(Tinterface_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
++Tmethod_sym *TRfunction(Tmethod_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
+ {
+ 	Tmethod_sym *ret;
+ 
+@@ -91,7 +91,7 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRprocedure(Tinterface_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
++Tmethod_sym *TRprocedure(Tmethod_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
+ {
+ 	Tmethod_sym *ret;
+ 
+@@ -117,7 +117,7 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRproc_header(char *name, Tother_sym_list *args)
++Tmethod_sym *TRproc_header(char *name, Tinterface_sym *args)
+ {
+ 	Tmethod_sym *ret;
+ 
+@@ -247,7 +247,7 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym *TRin_var_dcl(Tid_list *id_list, char *type1, char *type2, char *type3)
++Tother_sym *TRin_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+ 	Tother_sym *ret;
+ 
+@@ -273,7 +273,7 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym *TRout_var_dcl(Tid_list *id_list, char *type1, char *type2, char *type3)
++Tother_sym *TRout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+ 	Tother_sym *ret;
+ 
+@@ -299,7 +299,7 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym *TRinout_var_dcl(Tid_list *id_list, char *type1, char *type2, char *type3)
++Tother_sym *TRinout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+ 	Tother_sym *ret;
+ 
+@@ -754,6 +754,19 @@
+  * \param		
+  * \return	 
+  */
++Tsentence *TRvariable_call_node(char *name)
++{
++	Tsentence *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
+ Tsentence *TRstruct_call(Tsentence *previous_list, Tsentence *next_list)
+ {
+ 	Tsentence *ret;
+@@ -767,8 +780,21 @@
+  * \param		
+  * \return	 
+  */
+-Tvar_sym_list *TRvariable_list(Tvar_sym_list *previous_list, Tvar_sym *next_list)
++Tsentence *TRstruct_call_node(Tsentence *next_list)
+ {
++	Tsentence *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
++Tvar_sym_list *TRvariable_list(Tvar_sym_list *previous_list, Tsentence *next_list)
++{
+ 	Tvar_sym_list *ret;
+ 
+ 	return ret;
+@@ -780,6 +806,19 @@
+  * \param		
+  * \return	 
+  */
++Tvar_sym_list *TRvariable_list_node(Tsentence *next_list)
++{
++	Tvar_sym_list *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
+ Tsentence *TRprocedure_call(char *name, Texpr_list *arg_list)
+ {
+ 	Tsentence *ret;
+@@ -832,7 +871,7 @@
+  * \param		
+  * \return	 
+  */
+-Texpr_bool *TRexpr_bool(char type, Texpr_bool *left_expr, Texpr_bool *right_expr)
++Texpr_bool *TRexpr_bool_not(Texpr_bool *expr_bool)
+ {
+ 	Texpr_bool *ret;
+ 
+@@ -845,6 +884,32 @@
+  * \param		
+  * \return	 
+  */
++Texpr_bool *TRexpr_bool_log(char type, Texpr_bool *left_expr, Texpr_bool *right_expr)
++{
++	Texpr_bool *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
++Texpr_bool *TRexpr_bool(char type, Texpr *left_expr, Texpr *right_expr)
++{
++	Texpr_bool *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
+ Texpr_bool *TRexpr_bool_fcall(Tsentence *function_call)
+ {
+ 	Texpr_bool *ret;
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-03-12 14:48:59 UTC (rev 101)
++++ trunk/lea-translator.h	2005-03-12 14:50:29 UTC (rev 102)
+@@ -120,6 +120,27 @@
+ 	/****************************
+ 	*     Types definitions     *
+ 	****************************/
++	
++	typedef struct Tother_type Tother_type;
++	typedef struct Tother_sym Tother_sym;
++	typedef struct Treg_type Treg_type;
++	typedef struct Treg_sym Treg_sym;
++	typedef struct Texpr Texpr;
++	typedef struct Texpr_bool_op Texpr_bool_op;
++	typedef struct Tmethod_call Tmethod_call;
++	typedef struct Tmethod_sym Tmethod_sym;
++	typedef struct Tdeclarations_sym Tdeclarations_sym;
++	typedef struct Tsentence_list Tsentence_list;
++	typedef struct Tlibrary Tlibrary;
++	typedef struct Tinterface_sym Tinterface_sym;
++	typedef struct Tsentence Tsentence;
++	typedef struct Tif_statement Tif_statement;
++	typedef struct Tassign_statement Tassign_statement;
++	typedef struct Tmult_assign_statement Tmult_assign_statement;
++	typedef struct Twhile_loop Twhile_loop;
++	typedef struct Tfromto_loop Tfromto_loop;
++	typedef struct Treserved_call Treserved_call;
++	
+ 	/**
+ 	 * \brief Definition of all the (T)types used in the translator
+ 	 *
+@@ -336,7 +357,7 @@
+ 	 *  -  V(|intern_)file_type (for kind.file)
+ 	 *  -  V(|intern_)reg_type (for kind.reg)
+ 	 */
+-	typedef struct {
++	struct Tother_type {
+ 		char *name;
+ 		union {
+ 			Ttype *other;
+@@ -346,7 +367,7 @@
+ 			Treg_type *reg;
+ 		} kind;
+ 		char *type;
+-	} Tother_type;
++	};
+ 	
+ 	/**
+ 	 * \brief Tother_sym type definition
+@@ -362,7 +383,7 @@
+ 	 * (but only partially) redundant. But some redundancy
+ 	 * some times make things less insane!
+ 	 */
+-	typedef struct{
++	struct Tother_sym {
+ 		char *name;
+ 		union {
+ 			Tvar_sym *other;
+@@ -372,8 +393,8 @@
+ 			Treg_sym *reg;
+ 		} symbol;
+ 		char *type;
+-		Tother_type *type;
+-	}  Tother_sym; 
++		Tother_type *type_type;
++	}; 
+ 	
+ 	/**
+ 	 * \brief Tother_type_list type definition
+@@ -400,17 +421,17 @@
+ 	 */
+ 	typedef struct {
+ 		char *name;
+-		Tother_type_list *list;
++		Treg_type *list;
+ 	} Treg_type_sym;
+ 	
+ 	/**
+ 	 * \brief Treg_sym type definition
+ 	 */
+-	typedef struct {
++	struct Treg_sym {
+ 		char *name;
+ 		Treg_type_sym *type;
+ 		Tother_sym_list *store;
+-	} Treg_sym;
++	};
+ 	
+ 	/**
+ 	 * \brief Treg_call type definition
+@@ -425,7 +446,7 @@
+ 	} Treg_call;
+ 	
+ 	/**
+-	 * \brief expr_bsool type definition
++	 * \brief expr_bool type definition
+ 	 * In this structure char *type can be:
+ 	 *  -  OPexpr_bool (for expr_bool.expr_bool)
+ 	 *  -  OPvar_call (for expr_bool.var_call)
+@@ -450,7 +471,7 @@
+ 	 *  - OPeq/OPless/OPgreater/OPle/OPge (for right.expr, left.expr)
+ 	 *  - OPand/OPor (for right.expr_bool, left.expr_bool)
+ 	 */
+-	typedef struct {
++	struct Texpr_bool_op {
+ 		char *op;
+ 		union{
+ 			Texpr_bool *expr_bool;
+@@ -460,7 +481,7 @@
+ 			Texpr_bool *expr_bool;
+ 			Texpr *expr;
+ 		} right;
+-	} Texpr_bool_op;
++	};
+ 	
+ 	/**
+ 	 * \brief expr_op type definitionition
+@@ -482,7 +503,7 @@
+ 	 *  -  OParray_call (for expr.array_call)
+ 	 *  -  OPmethod_call (for expr.method_call)
+ 	 */
+-	typedef struct {
++	struct Texpr {
+ 		char *type;
+ 		union {
+ 			Texpr_bool_op *expr_bool;
+@@ -491,7 +512,7 @@
+ 			Tarray_sym *array_call;
+ 			Tmethod_call *method_call;
+ 		} expr;
+-	} Texpr;
++	};
+ 	
+ 	/**
+ 	 * \brief Tprogram type definition
+@@ -506,8 +527,6 @@
+ 	/**
+ 	 * \brief Tlibrary type definition
+ 	 */
+-	typedef struct Tlibrary Tlibrary;
+-	
+ 	struct Tlibrary {
+ 		Tlibrary *next;
+ 		Tmethod_sym *actual;
+@@ -518,36 +537,34 @@
+ 	 * In this structure char *type can be:
+ 	 *  - OPalg/OPfunc/OPproc
+ 	 */
+-	typedef struct {
++	struct Tmethod_sym {
+ 		char *name;
+ 		Tinterface_sym *interface;
+ 		Tdeclarations_sym *declarations;
+ 		Tsentence_list *sentences;
+ 		char *type;
+-	} Tmethod_sym;
++	};
+ 	
+ 	/**
+ 	 * \brief Tinterface_sym type definition
+ 	 * If this is an interface for a function then args_io
+ 	 * would be NULL and args_out would be a sole arg, etc..
+ 	 */
+-	typedef struct {
++	struct Tinterface_sym {
+ 		Tother_sym_list *args_in, *args_out, *args_io;
+-	} Tinterface_sym;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tdeclarations_sym type definition
+ 	 */
+-	typedef struct {
++	struct Tdeclarations_sym {
+ 		Tother_sym_list *consts, *vars;
+ 		Tother_type_list *types;
+-	} Tdeclarations_sym;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tsentence_list type definition
+ 	 */
+-	typedef struct Tsentence_list Tsentence_list;
+-	
+ 	struct Tsentence_list {
+ 		Tsentence *actual;
+ 		Tsentence_list *next;
+@@ -564,9 +581,8 @@
+ 	 *  -  Vmethod_call (for sentence.method_call)
+ 	 *  -  Vreserved_call (for sentence.Treserved_call)
+ 	 */
+-	typedef struct {
++	struct Tsentence {
+ 		char *type;
+-		char *TMP;
+ 		union {
+ 			Tif_statement *if_statement;
+ 			Tassign_statement *assign_statement;
+@@ -576,16 +592,15 @@
+ 			Tmethod_call *method_call;
+ 			Treserved_call *Treserved_call;
+ 		} sentence;
+-	} Tsentence;
+-	 
++	};
++	
+ 	/**
+-	 * \brief Tif_statement type definition
++	 * \brief Telif_statement type definition
+ 	 */
+ 	typedef struct {
+ 		Texpr_bool *cond;
+-		Telif_statement_list *elif_statement_list;
+-		Tsentence_list *sentence_list, *else_sentence_list;
+-	} Tif_statement;
++		Tsentence_list *sentence_list;
++	} Telif_statement;
+ 	 
+ 	/**
+ 	 * \brief Telif_statement_list type definition
+@@ -596,22 +611,23 @@
+ 		Telif_statement *actual;
+ 		Telif_statement_list *next;
+ 	};
+-	 
++	
+ 	/**
+-	 * \brief Telif_statement type definition
++	 * \brief Tif_statement type definition
+ 	 */
+-	typedef struct {
++	struct Tif_statement {
+ 		Texpr_bool *cond;
+-		Tsentence_list *sentence_list;
+-	} Telif_statement;
++		Telif_statement_list *elif_statement_list;
++		Tsentence_list *sentence_list, *else_sentence_list;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tassign_statement type definition
+ 	 */
+-	typedef struct {
++	struct Tassign_statement {
+ 		Tother_sym_list *sym_list;
+ 		Texpr *expr;
+-	} Tassign_statement;
++	};
+ 	 
+ 	/**
+ 	 * \brief Texpr_list type definition
+@@ -626,49 +642,49 @@
+ 	/**
+ 	 * \brief Tmult_assign_statement type definition
+ 	 */
+-	typedef struct {
++	struct Tmult_assign_statement {
+ 		Tother_sym_list *sym_list;
+ 		Texpr_list *expr_list;
+-	} Tmult_assign_statement;
++	};
+ 	
+ 	/**
+ 	 * \brief Twhile_loop type definition
+ 	 */
+-	typedef struct {
++	struct Twhile_loop {
+ 		Texpr_bool *cond;
+ 		Tsentence_list *sentence_list;
+-	} Twhile_loop;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tfromto_loop type definition
+ 	 */
+-	typedef struct {
++	struct Tfromto_loop {
+ 		Tassign_statement *assign_statement;
+ 		int *int_val;
+ 		Tsentence_list *sentence_list;
+-	} Tfromto_loop;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tmethod_call type definition
+ 	 */
+-	typedef struct {
++	struct Tmethod_call {
+ 		Texpr_list *arg_list;
+ 		union {
+ 			char *name;
+ 			Tmethod_sym *symbol;
+ 		} function;
+-	} Tmethod_call;
++	};
+ 	 
+ 	/**
+ 	 * \brief Treserved_call type definition
+ 	 */
+-	typedef struct {
++	struct Treserved_call {
+ 		Texpr_list *arg_list;
+ 		union {
+ 			char *name;
+ 			void *(*function_ptr)();
+ 		} function;
+-	} Treserved_call;
++	};
+ 	
+ 	/*
+ 	 * List types to keep an eye in for sorting the list of its elements
+@@ -679,7 +695,6 @@
+ 	 *  - Tlibrary
+ 	 * And also the structures that directly use them:
+ 	 *  - Treg_type_sym
+-	 *  - Treg_sym
+ 	 *  - Tprogram
+ 	 *  - Tinterface_sym
+ 	 *  - Tdeclarations_sym
+@@ -708,13 +723,13 @@
+ 	// algorithm: 
+ 	Tmethod_sym *TRalgorithm(char *, Tinterface_sym *, Tdeclarations_sym *, Tsentence_list *); 
+ 	// function: 
+-	Tmethod_sym *TRfunction(Tinterface_sym *, Tdeclarations_sym *, Tsentence_list *); 
++	Tmethod_sym *TRfunction(Tmethod_sym *, Tdeclarations_sym *, Tsentence_list *); 
+ 	// procedure: 
+-	Tmethod_sym *TRprocedure(Tinterface_sym *, Tdeclarations_sym *, Tsentence_list *); 
++	Tmethod_sym *TRprocedure(Tmethod_sym *, Tdeclarations_sym *, Tsentence_list *); 
+ 	// func_header: 
+ 	Tmethod_sym *TRfunc_header(char *, Tother_sym_list *, Tother_sym *); 
+ 	// proc_header: 
+-	Tmethod_sym *TRproc_header(char *, Tother_sym_list *); 
++	Tmethod_sym *TRproc_header(char *, Tinterface_sym *); 
+ 	// interface_block: 
+ 	// 		NULL;  
+ 	Tinterface_sym *TRinterface_block_in(Tother_sym_list *, Tinterface_sym *); 
+@@ -742,17 +757,17 @@
+ 	// in_var_dcl: 
+ // 	Tother_sym *TRin_var_dcl(Tid_list *, char *, NULL, NULL); 
+ // 	Tother_sym *TRin_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRin_var_dcl(Tid_list *, char *, char *, char *); 
++	Tother_sym *TRin_var_dcl(Tid_list *, char *, char *, char); 
+ 	Tother_sym *TRin_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// out_var_dcl: 
+ // 	Tother_sym *TRout_var_dcl(Tid_list *, char *, NULL, NULL); 
+ // 	Tother_sym *TRout_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRout_var_dcl(Tid_list *, char *, char *, char *); 
++	Tother_sym *TRout_var_dcl(Tid_list *, char *, char *, char); 
+ 	Tother_sym *TRout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// inout_var_dcl: 
+ // 	Tother_sym *TRinout_var_dcl(Tid_list *, char *, NULL, NULL); 
+ // 	Tother_sym *TRinout_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRinout_var_dcl(Tid_list *, char *, char *, char *); 
++	Tother_sym *TRinout_var_dcl(Tid_list *, char *, char *, char); 
+ 	Tother_sym *TRinout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// id_list: 
+ 	Tid_list *TRid_list(Tid_list *, char *); 
+@@ -833,13 +848,13 @@
+ 	Tsentence *TRfunction_call(char *, Texpr_list *); 
+ 	// TODO: is it correct to set this as  Tsentence *? variable_call: 
+ 	Tsentence *TRvariable_call(char *, Texpr_list *); 
+-// 	Tsentence *TRvariable_call($1, Texpr_list *); 
++	Tsentence *TRvariable_call_node(char *); 
+ 	// TODO: is it correct to set this as  Tsentence *? struct_call: 
+-	Tsentence *TRstruct_call(Tsentence *, Tsentence *); 
+-// 	Tsentence *TRstruct_call(NULL, Tsentence *); 
++	Tsentence *TRstruct_call(Tsentence *, Tsentence *);
++	Tsentence *TRstruct_call_node(Tsentence *);
+ 	// variable_list: 
+-	Tvar_sym_list *TRvariable_list(Tvar_sym_list *, Tvar_sym *); 
+-// 	Tvar_sym_list *TRvariable_list(NULL, Tvar_sym *); 
++	Tvar_sym_list *TRvariable_list(Tvar_sym_list *, Tsentence *); 
++	Tvar_sym_list *TRvariable_list_node(Tsentence *); 
+ 	// procedure_call: 
+ 	Tsentence *TRprocedure_call(char *, Texpr_list *); 
+ 	// expr_list: 
+@@ -849,15 +864,17 @@
+ 	// expr_bool: 
+ 	Texpr_bool *TRexpr_bool_val(bool *); 
+ 	Texpr_bool *TRexpr_bool_struct(Tsentence *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, NULL); 
+-	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, Texpr_bool *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, NULL);; 
++	Texpr_bool *TRexpr_bool_not(Texpr_bool *);  
++	Texpr_bool *TRexpr_bool_log(char, Texpr_bool *, Texpr_bool *); 
++	Texpr_bool *TRexpr_bool(char, Texpr *, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
++// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+ 	Texpr_bool *TRexpr_bool_fcall(Tsentence *); 
+ 	// expr: 
+ 	Texpr *TRexpr_int(int *); 
+
+Modified: trunk/lea.l
+===================================================================
+--- trunk/lea.l	2005-03-12 14:48:59 UTC (rev 101)
++++ trunk/lea.l	2005-03-12 14:50:29 UTC (rev 102)
+@@ -26,7 +26,7 @@
+ 	#include <stdlib.h>
+ 	#include <string.h>
+  	#include "lea-translator.h"
+-	#include "y.tab.h"
++	#include "lea.tab.h"
+ 	
+ 	#define MAX_STR_CONST 1024
+ 	#define lexical_error(a) printf("%s\n", a)
+@@ -163,7 +163,7 @@
+ 							if (*result > 0xff)
+ 								lexical_error("constant out of range");
+ 							
+-							*(yylval.char_val) = result;
++							yylval.char_val = (char *)result;
+ 							printf("CHAR_VAL "); return CHAR_VAL;
+ }
+ 
+
+Modified: trunk/lea.y
+===================================================================
+--- trunk/lea.y	2005-03-12 14:48:59 UTC (rev 101)
++++ trunk/lea.y	2005-03-12 14:50:29 UTC (rev 102)
+@@ -44,25 +44,24 @@
+ 	Tprogram				*Tprogram;
+ 	Tmethod_sym				*Tmethod_sym;
+ 	Tinterface_sym			*Tinterface_sym;
++	Tother_sym				*Tother_sym;
++	Tvar_sym_list			*Tvar_sym_list;
+ 	Tother_sym_list			*Tother_sym_list;
+ 	Tid_list				*Tid_list;
++	Tint_id_val				*Tint_id_val;
+ 	Tint_id_val_list		*Tint_id_val_list;
+ 	Tdeclarations_sym		*Tdeclarations_sym;
+-	Tother_sym_list			*Tother_sym_list;
+ 	Tother_type_list		*Tother_type_list;
+ 	Tstr_list				*Tstr_list;
+-	Tother_sym_list 		*Tother_sym_list;
+ 	Tother_type				*Tother_type;
+ 	Tsentence_list			*Tsentence_list;
+ 	Telif_statement			*Telif_statement;
+ 	Telif_statement_list	*Telif_statement_list;
+ 	Tsentence 				*Tsentence;
+ 	Tassign_statement		*Tassign_statement;
+-	Tsentence				*Tsentence;
+-	Tvar_call_list			*Tvar_call_list;
+-	Tsentence				*Tsentence;
+ 	Texpr_list				*Texpr_list;
+ 	Texpr_bool				*Texpr_bool;
++	Texpr					*Texpr;
+ // \endlist
+ }
+ 
+@@ -82,12 +81,12 @@
+  */
+ %type <Tstr_list>				str_list
+ %type <Texpr>					expr
+-%type <Tother_type_list>		types_dcl_list
++%type <Tother_type_list>		types_dcl_list types_block
+ %type <Tid_list>				id_list
+ %type <Tprogram>				program
+ %type <Telif_statement>			elif_statement
+-%type <Tsentence>				if_statement assign_statement mult_assign_statement output_input_statement while_loop fromto_loop function_call variable_call struct_call procedure_call
+-%type <Tint_id_val_list>		int_val_list
++%type <Tsentence>				if_statement assign_statement mult_assign_statement output_input_statement while_loop fromto_loop function_call variable_call struct_call procedure_call sentence
++%type <Tint_id_val_list>		int_val_list array_dimensions
+ %type <Texpr_list>				expr_list
+ %type <Tdeclarations_sym>		declarations_block
+ %type <Tint_id_val>				int_id_val
+@@ -95,12 +94,13 @@
+ %type <Texpr_bool>				expr_bool
+ %type <Tinterface_sym>			interface_block proc_arg proc_arg_list
+ %type <Tvar_sym_list>			variable_list
+-%type <Tother_sym_list>			in_arg_list out_arg_list inout_arg_list const_dcl_list vars_dcl vars_reg_dcl
++%type <Tother_sym_list>			in_arg_list out_arg_list inout_arg_list const_dcl_list vars_dcl vars_reg_dcl consts_block vars_block
+ %type <Tmethod_sym>				library algorithm function procedure func_header proc_header
+ %type <Tother_sym>				in_var_dcl out_var_dcl inout_var_dcl
+ %type <Telif_statement_list>	elif_statement_list
+-%type <Tsentence_list>			sentence_list
++%type <Tsentence_list>			sentence_list sentence_list_block
+ %type <Tother_type>				register
++%type <str_val>					prog_header alg_header
+ // \endlist
+ 
+ %start	program
+@@ -235,33 +235,33 @@
+ 
+ in_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRin_var_dcl($1, $3, NULL, NULL); }
++		{ $$ = TRin_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRin_var_dcl($1, $3, $5, NULL); }
++		{ $$ = TRin_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF IN_STREAM ID
+-		{ $$ = TRin_var_dcl($1, $3, $6, $5); }
++		{ $$ = TRin_var_dcl($1, $3, $6, 's'); }
+ 	| id_list  ':' ARRAY array_dimensions OF ID
+ 		{ $$ = TRin_var_dcl_array($1, $4, $6); }
+ ;
+ 
+ out_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRout_var_dcl($1, $3, NULL, NULL); }
++		{ $$ = TRout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRout_var_dcl($1, $3, $5, NULL); }
++		{ $$ = TRout_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF OUT_STREAM ID
+-		{ $$ = TRout_var_dcl($1, $3, $6, $5); }
++		{ $$ = TRout_var_dcl($1, $3, $6, 's'); }
+ 	| id_list ':' ARRAY array_dimensions OF ID
+-		{ $$ = TRout_varl_dcl_array($1, $4, $6); }
++		{ $$ = TRout_var_dcl_array($1, $4, $6); }
+ ;
+ 
+ inout_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRinout_var_dcl($1, $3, NULL, NULL); }
++		{ $$ = TRinout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRinout_var_dcl($1, $3, $5, NULL); }
++		{ $$ = TRinout_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF INOUT_STREAM ID
+-		{ $$ = TRinout_var_dcl($1, $3, $6, $5); }
++		{ $$ = TRinout_var_dcl($1, $3, $6, 's'); }
+ 	| id_list ':' ARRAY array_dimensions OF ID
+ 		{ $$ = TRinout_var_dcl_array($1, $4, $6); }
+ ;
+@@ -541,23 +541,23 @@
+ 
+ variable_call:
+ 	ID '[' expr_list ']'
+-		{ $$ = TRvariable_call($1, $2); }
++		{ $$ = TRvariable_call($1, $3); }
+ 	| ID
+-		{  $$ = TRvariable_call($1, NULL); }
++		{  $$ = TRvariable_call_node($1); }
+ ;
+ 
+ struct_call:
+ 	struct_call '.' variable_call
+ 		{ $$ = TRstruct_call($1, $3); }
+ 	| variable_call
+-		{ $$ = TRstruct_call(NULL, $1); }
++		{ $$ = TRstruct_call_node($1); }
+ ;
+ 
+ variable_list:
+ 	variable_list ',' variable_call
+ 		{ $$ = TRvariable_list($1, $3); }
+ 	| variable_call
+-		{ $$ = TRvariable_list(NULL, $1); }
++		{ $$ = TRvariable_list_node($1); }
+ ;
+ 
+ procedure_call:
+@@ -582,17 +582,17 @@
+ 	| struct_call
+ 		{ $$ = TRexpr_bool_struct($1); }
+ 	| NOT_OP expr_bool %prec NEG
+-		{ $$ = TRexpr_bool('!', $2, NULL); }
++		{ $$ = TRexpr_bool_not($2); }
+ 	| expr_bool AND_OP expr_bool
+-		{ $$ = TRexpr_bool($2, $1, $3); }
++		{ $$ = TRexpr_bool_log('&', $1, $3); }
+ 	| expr_bool OR_OP expr_bool
+-		{ $$ = TRexpr_bool($2, $1, $3); }
++		{ $$ = TRexpr_bool_log('|', $1, $3); }
+ 	| expr '=' expr
+-		{ $$ = TRexpr_bool($2, $1, $3); }
++		{ $$ = TRexpr_bool('=', $1, $3); }
+ 	| expr '<' expr
+-		{ $$ = TRexpr_bool($2, $1, $3); }
++		{ $$ = TRexpr_bool('<', $1, $3); }
+ 	| expr '>' expr
+-		{ $$ = TRexpr_bool($2, $1, $3); }
++		{ $$ = TRexpr_bool('>', $1, $3); }
+ 	| expr LE_OP expr
+ 		{ $$ = TRexpr_bool('l', $1, $3); }
+ 	| expr GE_OP expr
+@@ -618,17 +618,17 @@
+ 	| struct_call
+ 		{ $$ = TRexpr_struct($1); }
+ 	| expr '+' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('+', $1, $3); }
+ 	| expr '-' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('-', $1, $3); }
+ 	| expr '*' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('*', $1, $3); }
+ 	| expr '/' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('/', $1, $3); }
+ 	| expr '%' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('%', $1, $3); }
+ 	| expr '^' expr
+-		{ $$ = TRexpr($2, $1, $3); }
++		{ $$ = TRexpr('^', $1, $3); }
+ 	| '-' expr %prec NEG
+ 		{ $$ = TRexpr('n', $2, NULL); }
+ 	| '(' expr ')'
+
+
+
+From edulix at sheep.berlios.de  Mon Mar 21 14:44:53 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Mon, 21 Mar 2005 14:44:53 +0100
+Subject: [Lea-svn] r103 - trunk
+Message-ID: <200503211344.j2LDirf5031361@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-21 14:44:52 +0100 (Mon, 21 Mar 2005)
+New Revision: 103
+
+Modified:
+   trunk/lea.y
+Log:
+Minor comments text fixing
+
+
+Modified: trunk/lea.y
+===================================================================
+--- trunk/lea.y	2005-03-12 14:50:29 UTC (rev 102)
++++ trunk/lea.y	2005-03-21 13:44:52 UTC (rev 103)
+@@ -37,9 +37,8 @@
+ 	char					*char_val;
+ 	char					*str_val;
+ /*
+- * The list above has been automagically genereted executing:
++ * The list above has been partially automagically generated executing:
+  * $ ACTION=print_union_types ./handy.awk lea-translator.h
+- * NOTE: tabulation added manually
+  */
+ 	Tprogram				*Tprogram;
+ 	Tmethod_sym				*Tmethod_sym;
+@@ -75,7 +74,7 @@
+ %token <str_val>	STR_VAL ID
+ 
+ /*
+- * The list above has been automagically genereted executing:
++ * The list above has been partially automagically generated executing:
+  * $ ACTION=print_rule_types ./handy.awk lea.y
+  * NOTE: tabulation added manually
+  */
+
+
+
+From edulix at sheep.berlios.de  Mon Mar 21 14:47:23 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Mon, 21 Mar 2005 14:47:23 +0100
+Subject: [Lea-svn] r104 - trunk
+Message-ID: <200503211347.j2LDlNOd031501@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-21 14:47:14 +0100 (Mon, 21 Mar 2005)
+New Revision: 104
+
+Modified:
+   trunk/lea-translator.h
+Log:
+Adjunting the constants numbers and adding a comment about why there are a bunch of heading typedefs near the 
+beguining of the file
+
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-03-21 13:44:52 UTC (rev 103)
++++ trunk/lea-translator.h	2005-03-21 13:47:14 UTC (rev 104)
+@@ -77,50 +77,57 @@
+ 	#define Vintern_var_type		37
+ 	#define Vintern_reg_type		38
+ 	
+-	#define OPnot					40
+-	#define OPand					41
+-	#define OPor					42
+-	#define OPeq					43
+-	#define OPless					44
+-	#define OPgreater				45
+-	#define OPle					46
+-	#define OPge					47
++	#define OPnot					39
++	#define OPand					40
++	#define OPor					41
++	#define OPeq					42
++	#define OPless					43
++	#define OPgreater				44
++	#define OPle					45
++	#define OPge					46
+ 	
+-	#define OPsum					48
+-	#define OPsub					49
+-	#define OPmult					50
+-	#define OPdiv					51
+-	#define OPmod					52
+-	#define OPexp					53
++	#define OPsum					47
++	#define OPsub					48
++	#define OPmult					49
++	#define OPdiv					50
++	#define OPmod					51
++	#define OPexp					52
+ 	
+-	#define Valg					54
+-	#define Vfunc					55
+-	#define Vproc					56
++	#define Valg					53
++	#define Vfunc					54
++	#define Vproc					55
+ 	
+-	#define Vif_statement			57
+-	#define Vassign_statement		58
+-	#define Vmult_assign_statement	59
+-	#define Vwhile_loop				60
+-	#define Vfromto_loop			61
+-	#define Vmethod_call			62
+-	#define Vreserved_call			63
++	#define Vif_statement			56
++	#define Vassign_statement		57
++	#define Vmult_assign_statement	58
++	#define Vwhile_loop				59
++	#define Vfromto_loop			60
++	#define Vmethod_call			61
++	#define Vreserved_call			62
+ 	
+-	#define Valgorithm				64
+-	#define Vfunction				65
+-	#define Vprocedure				66
++	#define Valgorithm				63
++	#define Vfunction				64
++	#define Vprocedure				65
+ 	
+-	#define OPexpr					67
+-	#define OPexpr_bool				68
+-	#define OPop					69
+-	#define OPvar_call				70
+-	#define OParray_call			71
+-	#define OPmethod_call			72
+-	#define OPreserved_call			73
++	#define OPexpr					66
++	#define OPexpr_bool				67
++	#define OPop					68
++	#define OPvar_call				69
++	#define OParray_call			70
++	#define OPmethod_call			71
++	#define OPreserved_call			72
+ 	
+ 	/****************************
+ 	*     Types definitions     *
+ 	****************************/
+ 	
++	/* HACK:
++	 * These structures types are used the ones in the others
++	 * and the compiler doesn't handle very well dependencies
++	 * among them when structure types are declared directly,
++	 * so to circumvent the problem we separate the type definitions
++	 * and the structure definitions.
++	 */
+ 	typedef struct Tother_type Tother_type;
+ 	typedef struct Tother_sym Tother_sym;
+ 	typedef struct Treg_type Treg_type;
+
+
+
+From edulix at sheep.berlios.de  Mon Mar 21 14:49:29 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Mon, 21 Mar 2005 14:49:29 +0100
+Subject: [Lea-svn] r105 - trunk
+Message-ID: <200503211349.j2LDnT2k031618@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-21 14:49:28 +0100 (Mon, 21 Mar 2005)
+New Revision: 105
+
+Modified:
+   trunk/lea-translator.c
+Log:
+Started to implement the lea-translator methods. Adding the implementation of TRexpr_int(), TRexpr_float(), 
+TRexpr_bool() and TRexpr_str().
+
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-03-21 13:47:14 UTC (rev 104)
++++ trunk/lea-translator.c	2005-03-21 13:49:28 UTC (rev 105)
+@@ -918,54 +918,154 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Allocates storage for an integer expresion value
+  * 
+- * \param		
+- * \return	 
++ * \param	int_val	Value to preserve
++ * \return			Pointer to the expresion holding the given value
+  */
+ Texpr *TRexpr_int(int *int_val)
+ {
+-	Texpr *ret;
+-
++	// Returning struct:
++	Texpr		*ret;
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr));
++	ret->type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage->type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage->type)			=	Vintern_int_val;
++	storage->storage.int_val	=	int_val;
++	
++	// Note that internal vars don't have names:
++	internal_sym->name			=	(char *)NULL;
++	internal_sym->storage		=	storage;
++	
++	*(ret->type) 				=	OPvar_call;
++	ret->expr.var_call			=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a boolean expresion value
++ *
++ * \param	bool_val	Value to preserve
++ * \return				Pointer to the expresion holding the given value
+  */
+ Texpr *TRexpr_expr_bool(bool *bool_val)
+ {
+-	Texpr *ret;
+-
++	// Returning struct:
++	Texpr		*ret;
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr));
++	ret->type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage->type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage->type)			=	Vintern_bool_val;
++	storage->storage.bool_val	=	bool_val;
++	
++	// Note that internal vars don't have names:
++	internal_sym->name			=	(char *)NULL;
++	internal_sym->storage		=	storage;
++	
++	*(ret->type) 				=	OPvar_call;
++	ret->expr.var_call			=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a float expresion value
++ *
++ * \param	float_val	Value to preserve
++ * \return				Pointer to the expresion holding the given value
+  */
+ Texpr *TRexpr_float(float *float_val)
+ {
+-	Texpr *ret;
+-
++	// Returning struct:
++	Texpr		*ret;
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr));
++	ret->type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage->type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage->type)			=	Vintern_float_val;
++	storage->storage.float_val	=	float_val;
++	
++	// Note that internal vars don't have names:
++	internal_sym->name			=	(char *)NULL;
++	internal_sym->storage		=	storage;
++	
++	*(ret->type) 				=	OPvar_call;
++	ret->expr.var_call			=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a str expresion value
++ *
++ * \param	str	Value to preserve
++ * \return		Pointer to the expresion holding the given value
+  */
+ Texpr *TRexpr_str(char *str)
+ {
+-	Texpr *ret;
+-
++	// Returning struct:
++	Texpr		*ret;
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr));
++	ret->type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage->type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage->type)			=	Vintern_str_val;
++	storage->storage.str_val	=	str;
++	
++	// Note that internal vars don't have names:
++	internal_sym->name			=	(char *)NULL;
++	internal_sym->storage		=	storage;
++	
++	*(ret->type) 				=	OPvar_call;
++	ret->expr.var_call			=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+
+
+
+From edulix at sheep.berlios.de  Tue Mar 22 13:23:34 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Tue, 22 Mar 2005 13:23:34 +0100
+Subject: [Lea-svn] r106 - trunk
+Message-ID: <200503221223.j2MCNYDL000607@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-03-22 13:23:27 +0100 (Tue, 22 Mar 2005)
+New Revision: 106
+
+Modified:
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+Log:
+Adding implementation of some more functions (up to ten completed out of ~70) in lea-translator.c and a minor change 
+in lea-translator.h, I had left support for the OPne (not equal expr bool operation)
+
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-03-21 13:49:28 UTC (rev 105)
++++ trunk/lea-translator.c	2005-03-22 12:23:27 UTC (rev 106)
+@@ -827,28 +827,63 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Adds an element to a linked list of expresions
+  * 
+- * \param		
+- * \return	 
++ * \param	next_list	Existing linked list of expresions
++ * \param	actual		Expresion element to add to the list
++ * \return				New linked list containing all the previous \
++ * expresions and the new one
+  */
+-Texpr_list *TRexpr_list(Texpr_list *previous_list, Texpr *actual)
++Texpr_list *TRexpr_list(Texpr_list *next_list, Texpr *actual)
+ {
++	// Returning struct
+ 	Texpr_list *ret;
++	
++	// Allocate needed memory
++	ret	=	malloc(sizeof(Texpr_list));
++	
++	//Initialization
++	ret->next	=	next_list;
++	ret->actual	=	actual;
+ 
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
++ * \brief Allocates storage for a boolean expresion value
+  * 
+- * \param		
+- * \return	 
++ * \param	bool_val	Value to preserve
++ * \return				Pointer to the expresion holding the given value
+  */
+ Texpr_bool *TRexpr_bool_val(bool *val)
+ {
++	// Returning struct
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate variable symbol:
++	Tvar_sym	*internal_sym;
++	// Fundamental storage structure:
++	Ttype		*storage;
++	
++	// Allocate needed memory
++	ret							=	malloc(sizeof(Texpr_bool));
++	ret->type					=	malloc(sizeof(char));
++	
++	internal_sym				=	malloc(sizeof(Tvar_sym));
++	
++	storage						=	malloc(sizeof(Ttype));
++	storage->type				=	malloc(sizeof(char));
++	
++	// Initialization
++	*(storage->type)			=	Vintern_bool_val;
++	storage->storage.bool_val	=	val;
++	
++	// Note that internal vars don't have names:
++	internal_sym->name			=	(char *)NULL;
++	internal_sym->storage		=	storage;
++	
++	*(ret->type) 				=	OPvar_call;
++	ret->expr_bool.var_call		=	internal_sym;
++	
+ 	return ret;
+ }
+ 
+@@ -866,41 +901,127 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Negates a boolean expresion
+  * 
+- * \param		
+- * \return	 
++ * \param	expr_bool	Boolean expresion to negate
++ * \return				Returns a boolean expresion negating the given one
+  */
+ Texpr_bool *TRexpr_bool_not(Texpr_bool *expr_bool)
+ {
+-	Texpr_bool *ret;
+-
++	// Returning value
++	Texpr_bool		*ret;
++	// Internal intermediate struct
++	Texpr_bool_op	*expr_bool_op;
++	
++	// Allocate needed memory
++	ret					=	malloc(sizeof(Texpr_bool));
++	ret->type			=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op->op	=	malloc(sizeof(char));
++	
++	//Initialization
++	*(expr_bool_op->op)				=	OPnot;
++	expr_bool_op->left.expr_bool	=	expr_bool;
++	expr_bool_op->right.expr_bool	=	(Texpr_bool *)NULL;
++	
++	*(ret->type)					=	OPexpr_bool;
++	ret->expr_bool.expr_bool		=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a boolean operation with two boolean operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left boolean expresion in the operation
++ * \param	right_expr	Right boolean expresion in the operation
++ * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool_log(char type, Texpr_bool *left_expr, Texpr_bool *right_expr)
+ {
++	// Returning struct
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_bool_op *expr_bool_op;
++	
++	// Allocate needed memory
++	ret					=	malloc(sizeof(Texpr_bool));
++	ret->type			=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op->op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '&':
++			*(expr_bool_op->op)	=	OPand;
++			break;
++		case '|':
++			*(expr_bool_op->op)	=	OPor;
++			break;
++	}
++	expr_bool_op->left.expr_bool	=	left_expr;
++	expr_bool_op->right.expr_bool	=	right_expr;
++	
++	*(ret->type)					=	OPexpr_bool;
++	ret->expr_bool.expr_bool		=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for a boolean operation with two operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left expresion in the operation
++ * \param	right_expr	Right expresion in the operation
++ * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool(char type, Texpr *left_expr, Texpr *right_expr)
+ {
++	// Returning struct:
+ 	Texpr_bool *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_bool_op *expr_bool_op;
++	
++	// Allocate needed memory
++	ret			=	malloc(sizeof(Texpr_bool));
++	ret->type	=	malloc(sizeof(char));
++	
++	expr_bool_op		=	malloc(sizeof(Texpr_bool_op));
++	expr_bool_op->op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '=':
++			*(expr_bool_op->op)	=	OPeq;
++			break;
++		case '<':
++			*(expr_bool_op->op)	=	OPless;
++			break;
++		case '>':
++			*(expr_bool_op->op)	=	OPgreater;
++			break;
++		case 'l':
++			*(expr_bool_op->op)	=	OPle;
++			break;
++		case 'g':
++			*(expr_bool_op->op)	=	OPge;
++			break;
++		case 'n':
++			*(expr_bool_op->op)	=	OPne;
++			break;
++	}
++	expr_bool_op->left.expr		=	left_expr;
++	expr_bool_op->right.expr	=	right_expr;
++	
++	*(ret->type)				=	OPexpr_bool;
++	ret->expr_bool.expr_bool	=	expr_bool_op;
++	
+ 	return ret;
+ }
+ 
+@@ -1083,15 +1204,55 @@
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
++ * \brief Allocates storage for an operation with two operands
++ *
++ * \param	type		Operation
++ * \param	left_expr	Left expresion in the operation
++ * \param	right_expr	Right expresion in the operation
++ * \return				Pointer to the structure holding the operation
+  */
+ Texpr *TRexpr(char type, Texpr *left_expr, Texpr *right_expr)
+ {
++	// Returning struct:
+ 	Texpr *ret;
+-
++	// Internal intermediate storage struct:
++	Texpr_op *expr_op;
++	
++	// Allocate needed memory
++	ret			=	malloc(sizeof(Texpr));
++	ret->type	=	malloc(sizeof(char));
++	
++	expr_op		=	malloc(sizeof(Texpr_op));
++	expr_op->op	=	malloc(sizeof(char));
++	
++	// Initialization
++	switch (type)
++	{
++		case '+':
++			*(expr_op->op)	=	OPsum;
++			break;
++		case '-':
++			*(expr_op->op)	=	OPsub;
++			break;
++		case '*':
++			*(expr_op->op)	=	OPmult;
++			break;
++		case '/':
++			*(expr_op->op)	=	OPdiv;
++			break;
++		case '%':
++			*(expr_op->op)	=	OPmod;
++			break;
++		case '^':
++			*(expr_op->op)	=	OPexp;
++			break;
++	}
++	expr_op->left	=	left_expr;
++	expr_op->right	=	right_expr;
++	
++	*(ret->type)	=	OPexpr;
++	ret->expr.expr	=	expr_op;
++	
+ 	return ret;
+ }
+ 
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-03-21 13:49:28 UTC (rev 105)
++++ trunk/lea-translator.h	2005-03-22 12:23:27 UTC (rev 106)
+@@ -85,37 +85,38 @@
+ 	#define OPgreater				44
+ 	#define OPle					45
+ 	#define OPge					46
++	#define OPne					47
+ 	
+-	#define OPsum					47
+-	#define OPsub					48
+-	#define OPmult					49
+-	#define OPdiv					50
+-	#define OPmod					51
+-	#define OPexp					52
++	#define OPsum					48
++	#define OPsub					49
++	#define OPmult					50
++	#define OPdiv					51
++	#define OPmod					52
++	#define OPexp					53
+ 	
+-	#define Valg					53
+-	#define Vfunc					54
+-	#define Vproc					55
++	#define Valg					54
++	#define Vfunc					55
++	#define Vproc					56
+ 	
+-	#define Vif_statement			56
+-	#define Vassign_statement		57
+-	#define Vmult_assign_statement	58
+-	#define Vwhile_loop				59
+-	#define Vfromto_loop			60
+-	#define Vmethod_call			61
+-	#define Vreserved_call			62
++	#define Vif_statement			57
++	#define Vassign_statement		58
++	#define Vmult_assign_statement	59
++	#define Vwhile_loop				60
++	#define Vfromto_loop			61
++	#define Vmethod_call			62
++	#define Vreserved_call			63
+ 	
+-	#define Valgorithm				63
+-	#define Vfunction				64
+-	#define Vprocedure				65
++	#define Valgorithm				64
++	#define Vfunction				65
++	#define Vprocedure				66
+ 	
+-	#define OPexpr					66
+-	#define OPexpr_bool				67
+-	#define OPop					68
+-	#define OPvar_call				69
+-	#define OParray_call			70
+-	#define OPmethod_call			71
+-	#define OPreserved_call			72
++	#define OPexpr					67
++	#define OPexpr_bool				68
++	#define OPop					69
++	#define OPvar_call				70
++	#define OParray_call			71
++	#define OPmethod_call			72
++	#define OPreserved_call			73
+ 	
+ 	/****************************
+ 	*     Types definitions     *
+@@ -475,7 +476,7 @@
+ 	 * In this special case, we use a variable char *op; that implitily
+ 	 * specifies which type will be used in left and right vars:
+ 	 *  - OPnot (for right.expr_bool = NULL, left.expr_bool)
+-	 *  - OPeq/OPless/OPgreater/OPle/OPge (for right.expr, left.expr)
++	 *  - OPeq/OPless/OPgreater/OPle/OPge/OPne (for right.expr, left.expr)
+ 	 *  - OPand/OPor (for right.expr_bool, left.expr_bool)
+ 	 */
+ 	struct Texpr_bool_op {
+
+
+

@@ -1,0 +1,2728 @@
+From edulix at sheep.berlios.de  Sun May  1 17:48:05 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sun, 1 May 2005 17:48:05 +0200
+Subject: [Lea-svn] r110 - trunk
+Message-ID: <200505011548.j41Fm5jg004731@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-05-01 17:48:04 +0200 (Sun, 01 May 2005)
+New Revision: 110
+
+Modified:
+   trunk/lea.l
+   trunk/lea.y
+Log:
+Fixed correctly detection of linux/unix scripting style.
+Now it *only* eats up #!<path> when it's in the first line
+
+
+
+Modified: trunk/lea.l
+===================================================================
+--- trunk/lea.l	2005-05-01 15:09:02 UTC (rev 109)
++++ trunk/lea.l	2005-05-01 15:48:04 UTC (rev 110)
+@@ -61,13 +61,7 @@
+ <comment>"*/"\n			{ printf("BEGIN(INITIAL) \n"); BEGIN(INITIAL);	}
+ "//".*\n				{ printf("ONE-LINE COMMENT \n"); }
+ 
+-%{/*
+-   * This is for scripting  to work:
+-   * TODO: this should only apply when it's on the first line!
+-   * TODO: this should determine login_prompt var!
+-   */
+-%}
+-^"#!/"({ID}\/)*{ID}\n	{ printf("SCRIPT LINE \n"); }
++
+ ^[ \t]*\n				{ printf("\nNULL LINE \n"); }
+ [ \t]+					{  }
+ 
+
+Modified: trunk/lea.y
+===================================================================
+--- trunk/lea.y	2005-05-01 15:09:02 UTC (rev 109)
++++ trunk/lea.y	2005-05-01 15:48:04 UTC (rev 110)
+@@ -634,11 +634,29 @@
+ int main(int argc, char *argv[])
+ {
+ 	extern FILE *yyin;
++	char *header;
+ 	
+ 	if (argc > 1) {
+ 		if (!(yyin = fopen(argv[1], "r"))) {
+ 			fprintf(stderr, "\nUnable to open source file: %s\n", argv[1]);
+ 			exit(1);
++		} else {
++			header = calloc(255, sizeof(char));
++			fgets(header,255, yyin);
++			
++			/*
++			 * Detect whether header does contain a
++			 * Linux scripting header or not. If not,
++			 * reposition to the beguinning of the
++			 * stream.
++			 */
++			
++			if(header[0] != '#' || header[1] != '!')
++			{
++				printf("bingo: %s\n", header);
++				fseek(yyin, 0, SEEK_SET);
++			}
++			free(header);
+ 		}
+ 	}
+ 	
+
+
+
+From edulix at sheep.berlios.de  Mon May  2 19:11:48 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Mon, 2 May 2005 19:11:48 +0200
+Subject: [Lea-svn] r111 - trunk
+Message-ID: <200505021711.j42HBm4C018342@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-05-02 19:11:32 +0200 (Mon, 02 May 2005)
+New Revision: 111
+
+Modified:
+   trunk/Makefile
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+   trunk/lea.y
+Log:
+* Added target "wc" to Makefile. Affected file:
+Makefile
+
+* Fixed elif_statement_list to use left recursivity
+(elif_statement elif_statement_list).
+Affected files:
+lea.y
+lea-translator.h
+lea-translator.c
+
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2005-05-01 15:48:04 UTC (rev 110)
++++ trunk/Makefile	2005-05-02 17:11:32 UTC (rev 111)
+@@ -6,6 +6,9 @@
+ YACC_SRC=$(LEX_SRC:.l=.y)
+ OUT=$(LEX_SRC:.l=)
+ 
++ERASABLE=$(TMPS) lea.tab.h $(OUT) *.o *~
++WRITTEN=*{.h,.c,.y,.awk,Makefile}
++
+ LEX=flex
+ YACC=bison
+ 
+@@ -15,10 +18,14 @@
+ 	$(CC) -o $(OUT) $(TMPS) $(OBJS) -lfl -lm $(CFLAGS)
+ 
+ clean:
+-	$(RM) -f $(TMPS) $(OUT) *.o *~
++	$(RM) -f $(ERASABLE)
+ 
+ prueba:
+ 	$(CC) -o prueba prueba.c
+ 
+ install:
+ 	cp lea /bin/
++	
++wc:
++	wc -l $(WRITTEN) | tail -n 1
++
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-05-01 15:48:04 UTC (rev 110)
++++ trunk/lea-translator.c	2005-05-02 17:11:32 UTC (rev 111)
+@@ -404,7 +404,7 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence *TRif_statement(Texpr_bool *if_expr, Tsentence_list *if_sentence_list, Telif_statement_list *el_if_list, Tsentence_list *else_sentence_list)
++Tsentence *TRif_statement(Texpr_bool *if_expr, Tsentence_list *if_sentence_list, Telif_statement_list *el_if_list)
+ {
+ 	Tsentence *ret;
+ 
+@@ -443,6 +443,19 @@
+  * \param		
+  * \return	 
+  */
++Telif_statement_list *TRelif_statement_list_else(Tsentence_list *sentence_list)
++{
++	Telif_statement_list *ret;
++
++	return ret;
++}
++
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
+ Tsentence *TRassign_statement_assign(Tsentence *var_call, Tsentence *assign_statement)
+ {
+ 	Tsentence *ret;
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-05-01 15:48:04 UTC (rev 110)
++++ trunk/lea-translator.h	2005-05-02 17:11:32 UTC (rev 111)
+@@ -233,6 +233,7 @@
+ 	/**
+ 	 * \brief Tvar_sym type definition
+ 	 * Symbols are meant to be part of the symbol table
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -242,6 +243,7 @@
+ 	/**
+ 	 * \brief Tvar_sym_list type definition
+ 	 * Note that constants and vars are both called via this type list
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct Tvar_sym_list Tvar_sym_list;
+ 	 
+@@ -272,6 +274,8 @@
+ 	
+ 	/**
+ 	 * \brief Tstr_list type definition
++	 * \WARNING: might not needed anymore.
++	 * Could be replaced with Tenum_element * ??
+ 	 */
+ 	typedef struct Tstr_list Tstr_list;
+ 	
+@@ -297,6 +301,7 @@
+ 	 * \brief Tenum_element type definition
+ 	 * Used in Tenum_type to identify enum elements with an integer value
+ 	 * used only internaly to speed up the enumerated type
++	 * \WARNING: recheck, needs to be rethought
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -307,6 +312,8 @@
+ 	 * \brief Tenum_type type definition
+ 	 * Note that as the elements of an enumerated type doesn't ever change
+ 	 * we've defined *storage as a "dynamic" array instead of as a linked list  
++	 * \WARNING might be not needed anymore: "char *name;"
++	 * \WARNING: recheck, needs to be rethought
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -316,6 +323,7 @@
+ 	/**
+ 	 * \brief Tenum_sym type definition
+ 	 * Symbols are meant to be part of the symbol table
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -325,6 +333,7 @@
+ 	
+ 	/**
+ 	 * \brief Tarray_type type definition
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -338,6 +347,7 @@
+ 	 * Note that whenever we have fixed number of elements, we stop using linked lists
+ 	 * and use pointers (that can be properly used as "dynamic" arrays), like in
+ 	 * Tother_sym *elements;.
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -362,6 +372,7 @@
+ 	 * \brief Tfile_type type definition
+ 	 * Note that files and streams are used internally in this
+ 	 * implementation indistinctively
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -371,8 +382,9 @@
+ 	/**
+ 	 * \brief Tfile_sym type definition
+ 	 * Symbols are meant to be part of the symbol table
+-	 * WARNING: Check that we don't have files of registers that
++	 * \WARNING Check that we don't have files of registers that
+ 	 * contain files, for $DEITY's sake!
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -388,6 +400,7 @@
+ 	 *  -  V(|intern_)array_type (for kind.array)
+ 	 *  -  V(|intern_)file_type (for kind.file)
+ 	 *  -  V(|intern_)reg_type (for kind.reg)
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	struct Tother_type {
+ 		char *name;
+@@ -414,6 +427,7 @@
+ 	 * In TXXX_sym you already get the type, so Tother_type is
+ 	 * (but only partially) redundant. But some redundancy
+ 	 * some times make things less insane!
++	 * \WARNING might be not needed anymore: "char *name;"
+ 	 */
+ 	struct Tother_sym {
+ 		char *name;
+@@ -430,6 +444,7 @@
+ 	
+ 	/**
+ 	 * \brief Tother_type_list type definition
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct Tother_type_list Tother_type_list;
+ 	
+@@ -440,6 +455,7 @@
+ 	
+ 	/**
+ 	 * \brief Tother_sym_list type definition
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct Tother_sym_list Tother_sym_list;
+ 	
+@@ -466,6 +482,7 @@
+ 	
+ 	/**
+ 	 * \brief Tsym_call_list type definition
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct Tsym_call_list Tsym_call_list;
+ 	
+@@ -476,6 +493,8 @@
+ 	
+ 	/**
+ 	 * \brief Treg_type_sym type definition
++	 * \WARNING might be not needed anymore: "char *name;"
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	typedef struct {
+ 		char *name;
+@@ -484,6 +503,9 @@
+ 	
+ 	/**
+ 	 * \brief Treg_sym type definition
++	 * \WARNING might be not needed anymore: "char *name;"
++	 * \WARNING needs major rework
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	struct Treg_sym {
+ 		char *name;
+@@ -493,7 +515,7 @@
+ 	
+ 	/**
+ 	 * \brief Treg_call type definition
+-	 * Note that this will store only a ultimate call to
++	 * Note that this will store only an ultimate call to
+ 	 * a register; myRegister.intArrayNM[x, y] should be
+ 	 * stored as a Tvar_sym (to an integer var) and not 
+ 	 * as a Treg_call!
+@@ -595,6 +617,7 @@
+ 	 
+ 	/**
+ 	 * \brief Tlibrary type definition
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	struct Tlibrary {
+ 		Tlibrary *next;
+@@ -605,6 +628,9 @@
+ 	 * \brief Tmethod_sym type definition
+ 	 * In this structure char *type can be:
+ 	 *  - OPalg/OPfunc/OPproc
++	 * \WARNING might be not needed anymore:
++	 * "char *name;, Tdeclarations_sym *declarations;
++	 * Tinterface_sym *interface;"
+ 	 */
+ 	struct Tmethod_sym {
+ 		char *name;
+@@ -618,6 +644,7 @@
+ 	 * \brief Tinterface_sym type definition
+ 	 * If this is an interface for a function then args_io
+ 	 * would be NULL and args_out would be a sole arg, etc..
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	struct Tinterface_sym {
+ 		Tother_sym_list *args_in, *args_out, *args_io;
+@@ -625,6 +652,7 @@
+ 	 
+ 	/**
+ 	 * \brief Tdeclarations_sym type definition
++	 * \WARNING might be not needed anymore
+ 	 */
+ 	struct Tdeclarations_sym {
+ 		Tother_sym_list *consts, *vars;
+@@ -687,11 +715,12 @@
+ 	struct Tif_statement {
+ 		Texpr_bool *cond;
+ 		Telif_statement_list *elif_statement_list;
+-		Tsentence_list *sentence_list, *else_sentence_list;
++		Tsentence_list *sentence_list;
+ 	};
+ 	 
+ 	/**
+ 	 * \brief Tassign_statement type definition
++	 * \WARNING might need a Tsym_call_list *sym_list_last;
+ 	 */
+ 	struct Tassign_statement {
+ 		Tsym_call_list *sym_list;
+@@ -912,12 +941,13 @@
+ 	Tsentence_list *TRsentence_list(Tsentence *, Tsentence_list *); 
+ 	// 		NULL;  
+ 	// if_statement: 
+-	Tsentence *TRif_statement(Texpr_bool *, Tsentence_list *, Telif_statement_list *, Tsentence_list *); 
++	Tsentence *TRif_statement(Texpr_bool *, Tsentence_list *, Telif_statement_list *); 
+ // 	Tsentence *TRif_statement(Texpr_bool *, Tsentence_list *, NULL, Tsentence_list *); 
+ 	// elif_statement: 
+ 	Telif_statement *TRelif_statement(Texpr_bool *, Tsentence_list *); 
+ 	// elif_statement_list: 
+ 	Telif_statement_list *TRelif_statement_list(Telif_statement *, Telif_statement_list *); 
++	Telif_statement_list *TRelif_statement_list_else(Tsentence_list *); 
+ // 	Telif_statement_list *TRelif_statement_list(NULL, Telif_statement *); 
+ 	// assign_statement: 
+ 	Tsentence *TRassign_statement_assign(Tsentence *, Tsentence *); 
+@@ -959,13 +989,6 @@
+ 	Texpr_bool *TRexpr_bool_not(Texpr_bool *);  
+ 	Texpr_bool *TRexpr_bool_log(char, Texpr_bool *, Texpr_bool *); 
+ 	Texpr_bool *TRexpr_bool(char, Texpr *, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr*, Texpr *); 
+ 	Texpr_bool *TRexpr_bool_fcall(Tsentence *); 
+ 	// expr: 
+ 	Texpr *TRexpr_int(int *); 
+@@ -974,11 +997,5 @@
+ 	Texpr *TRexpr_str(char *); 
+ 	Texpr *TRexpr_struct(Tsentence *); 
+ 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, Texpr *); 
+-// 	Texpr *TRexpr(char, Texpr *, NULL); 
+ 	Texpr *TRexpr_fcall(Tsentence *); 
+ 	#endif
+
+Modified: trunk/lea.y
+===================================================================
+--- trunk/lea.y	2005-05-01 15:48:04 UTC (rev 110)
++++ trunk/lea.y	2005-05-02 17:11:32 UTC (rev 111)
+@@ -82,7 +82,6 @@
+ %type <Tstr_list>				str_list
+ %type <Texpr>					expr expr_op expr_val
+ %type <Tid_list>				id_list
+-%type <Telif_statement>			elif_statement
+ %type <Tsentence>				if_statement assign_statement mult_assign_statement output_input_statement while_loop fromto_loop function_call variable_call struct_call procedure_call sentence input_statement output_statement
+ %type <Tint_id_val_list>		int_val_list array_dimensions
+ %type <Texpr_list>				expr_list expr_list_full
+@@ -92,6 +91,7 @@
+ %type <Texpr_bool>				expr_bool
+ %type <Tvar_sym_list>			variable_list
+ %type <Telif_statement_list>	elif_statement_list
++%type <Telif_statement>			elif_statement
+ %type <Tsentence_list>			sentence_list sentence_list_block
+ // \endlist
+ 
+@@ -402,27 +402,18 @@
+ 		{ $$ = $1; }
+ ;
+ 
++cond_start:
++	':' '\n'
++	| ':'
++;
++
+ if_statement:
+ 	IF expr_bool cond_start
+ 		sentence_list
+ 	elif_statement_list
+-	'|' ELSE cond_start
+-		sentence_list
+-	ENDIF '\n'
+-		{ $$ = TRif_statement($2, $4, $5, $9); }
+-	| IF expr_bool cond_start
+-		sentence_list
+-	'|' ELSE cond_start
+-		sentence_list
+-	ENDIF '\n'
+-		{ $$ = TRif_statement($2, $4, NULL, $8); }
++ 		{ $$ = TRif_statement($2, $4, $5); }
+ ;
+ 
+-cond_start:
+-	':' '\n'
+-	| ':'
+-;
+-
+ elif_statement:
+ 	'|' expr_bool cond_start
+ 		sentence_list
+@@ -430,10 +421,12 @@
+ ;
+ 
+ elif_statement_list:
+-	elif_statement_list elif_statement
+-		{ $$ = TRelif_statement_list($2, $1); }
+-	| elif_statement
+-		{ $$ = TRelif_statement_list($1, NULL); }
++	elif_statement elif_statement_list
++		{ $$ = TRelif_statement_list($1, $2); }
++	| '|' ELSE cond_start
++		sentence_list
++	ENDIF '\n'
++		{ $$ = TRelif_statement_list_else($4); }
+ ;
+ 
+ assign_statement:
+@@ -653,7 +646,6 @@
+ 			
+ 			if(header[0] != '#' || header[1] != '!')
+ 			{
+-				printf("bingo: %s\n", header);
+ 				fseek(yyin, 0, SEEK_SET);
+ 			}
+ 			free(header);
+
+
+
+From edulix at sheep.berlios.de  Sat May 21 16:10:22 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sat, 21 May 2005 16:10:22 +0200
+Subject: [Lea-svn] r112 - in trunk: . katehighlight
+Message-ID: <200505211410.j4LEAM3J010828@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-05-21 16:10:14 +0200 (Sat, 21 May 2005)
+New Revision: 112
+
+Added:
+   trunk/katehighlight/
+   trunk/katehighlight/lea.xml
+Log:
+Adding syntax highlighting for kate
+Edulix
+
+
+
+Added: trunk/katehighlight/lea.xml
+===================================================================
+--- trunk/katehighlight/lea.xml	2005-05-02 17:11:32 UTC (rev 111)
++++ trunk/katehighlight/lea.xml	2005-05-21 14:10:14 UTC (rev 112)
+@@ -0,0 +1,37 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE language SYSTEM "language.dtd">
++<language name="LEA" version="1.0" kateversion="2.4" section="Scripts" extensions="*.lea" priority="9">
++
++<!-- (c) 2005 by Eduardo Robles Elvira, edulix at spymac.com
++		Released under the LGPL-->
++
++<highlighting>
++    <list name="keywords">
++		<item>prog</item>
++		<item>alg</item>
++		<item>func</item>
++		<item>proc</item>
++		<item>fin</item>
++		<item>ent</item>
++		<item>sal</item>
++		<item>entsal</item>
++		<item>ent/sal</item>
++		<item>cons</item>
++		<item>tipos</item>
++		<item>reg</item>
++		<item>freg</item>
++		<item></item>
++		<item></item>
++	</list>
++	<list name="types">
++		<item>logico</item>
++		<item>entero</item>
++		<item>real</item>
++		<item>fichero</item>
++		<item>tabla</item>
++		<item></item>
++		<item></item>
++		<item></item>
++		<item></item>
++	</list>
++</highlight>
+\ No newline at end of file
+
+
+
+From edulix at sheep.berlios.de  Sat May 21 16:29:19 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sat, 21 May 2005 16:29:19 +0200
+Subject: [Lea-svn] r113 - in trunk: . katehighlight
+Message-ID: <200505211429.j4LETJ4g014058@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-05-21 16:29:18 +0200 (Sat, 21 May 2005)
+New Revision: 113
+
+Modified:
+   trunk/Makefile
+   trunk/katehighlight/lea.xml
+Log:
+katehighlight/lea.xml:
+	Updating lea syntax highlighting in kde
+Makefile:
+	Now syntax highlighting can be installed via "make kde"
+
+
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2005-05-21 14:10:14 UTC (rev 112)
++++ trunk/Makefile	2005-05-21 14:29:18 UTC (rev 113)
+@@ -12,6 +12,8 @@
+ LEX=flex
+ YACC=bison
+ 
++KDEDIR=/usr
++
+ lea: $(OBJS)
+ 	$(LEX) $(LEX_SRC)
+ 	$(YACC) --verbose -d $(YACC_SRC)
+@@ -29,3 +31,6 @@
+ wc:
+ 	wc -l $(WRITTEN) | tail -n 1
+ 
++kde:
++	cp katehighlight/lea.xml $(KDEDIR)/share/apps/katepart/syntax/
++
+
+Modified: trunk/katehighlight/lea.xml
+===================================================================
+--- trunk/katehighlight/lea.xml	2005-05-21 14:10:14 UTC (rev 112)
++++ trunk/katehighlight/lea.xml	2005-05-21 14:29:18 UTC (rev 113)
+@@ -1,37 +1,185 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<!DOCTYPE language SYSTEM "language.dtd">
+-<language name="LEA" version="1.0" kateversion="2.4" section="Scripts" extensions="*.lea" priority="9">
++<!DOCTYPE language SYSTEM "language.dtd"
++		  [
++		  <!ENTITY var		"[A-Za-z][\w_]*">
++   ]>
++<language name="LEA" version="1.0" kateversion="2.4" section="Scripts" extensions="*.lea" priority="20"
++		  author="Eduardo Robles Elvira (edulix at spymac.com)" license="LGPL">
+ 
+-<!-- (c) 2005 by Eduardo Robles Elvira, edulix at spymac.com
+-		Released under the LGPL-->
+-
+-<highlighting>
+-    <list name="keywords">
+-		<item>prog</item>
+-		<item>alg</item>
+-		<item>func</item>
+-		<item>proc</item>
+-		<item>fin</item>
+-		<item>ent</item>
+-		<item>sal</item>
+-		<item>entsal</item>
+-		<item>ent/sal</item>
+-		<item>cons</item>
+-		<item>tipos</item>
+-		<item>reg</item>
+-		<item>freg</item>
+-		<item></item>
+-		<item></item>
+-	</list>
+-	<list name="types">
+-		<item>logico</item>
+-		<item>entero</item>
+-		<item>real</item>
+-		<item>fichero</item>
+-		<item>tabla</item>
+-		<item></item>
+-		<item></item>
+-		<item></item>
+-		<item></item>
+-	</list>
+-</highlight>
+\ No newline at end of file
++	<highlighting>
++		<list name="keywords">
++			<item>cons</item>
++			<item>tipos</item>
++			<item>var</item>
++			<item>dev</item>
++			<item>prin</item>
++			
++			<item>ent</item>
++			<item>sal</item>
++			<item>entsal</item>
++			<item>ent/sal</item>
++			
++			<item>|</item>
++			<item>otras</item>
++			<item>nula</item>
++			<item>hasta</item>
++			<item>nula</item>
++			<item>tabla</item>
++			
++			<item>cierto</item>
++			<item>verdadero</item>
++			<item>falso</item>
++			
++			<item>y</item>
++			<item>o</item>
++			<item>no</item>
++		</list>
++		
++		<list name="functions">
++			<item>escribir</item>
++			<item>leer</item>
++			<item>truncar</item>
++			<item>redondear</item>
++			<item>abrir</item>
++			<item>cerrar</item>
++		</list>
++		
++		<list name="types">
++			<item>logico</item>
++			<item>entero</item>
++			<item>real</item>
++			<item>caracter</item>
++			<item>cadena</item>
++			<item>fichero</item>
++			<item>flujo</item>
++			<item>de</item>
++			<item>entrada</item>
++			<item>salida</item>
++		</list>
++		
++		<list name="blocks">
++			<item>prog</item>
++			<item>alg</item>
++			<item>func</item>
++			<item>proc</item>
++		</list>
++		
++		<contexts>
++			<context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
++				<keyword attribute="Keyword"	context="#stay"			String="keywords"/>
++				<keyword attribute="Builtins"	context="#stay"			String="functions"/>
++				
++				<DetectChar attribute="String" context="String" char="&quot;"/>
++				
++				<Float		attribute="Float"	context="#stay"/>
++				<Int		attribute="Decimal"	context="#stay"/>
++				<HlCChar	attribute="Char"	context="#stay"/>
++				
++				<IncludeRules context="##Doxygen" />
++				<Detect2Chars attribute="Comment" context="Commentar 1" char="#" char1="!"/>
++				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="/"/>
++				<Detect2Chars attribute="Comment" context="Commentar 3" char="/" char1="*" beginRegion="Comment"/>
++				
++				<RegExpr attribute="Keyword" context="#stay" String="si" beginRegion="Region1"/>
++				<StringDetect attribute="Keyword" context="#stay" String="fsi" endRegion="Region1"/>
++				
++				<RegExpr attribute="Keyword" context="#stay" String="mientras" beginRegion="Region2"/>
++				<StringDetect attribute="Keyword" context="#stay" String="fm" endRegion="Region2"/>
++				
++				<RegExpr attribute="Keyword" context="#stay" String="desde" beginRegion="Region3"/>
++				<StringDetect attribute="Keyword" context="#stay" String="fd" endRegion="Region3"/>
++				
++				<keyword attribute="Keyword" context="#stay" String="blocks" beginRegion="Region4"/>
++				<StringDetect attribute="Keyword" context="#stay" String="fin" endRegion="Region4"/>
++				
++				<RegExpr attribute="Keyword" context="#stay" String="reg" beginRegion="Region5"/>
++				<StringDetect attribute="Keyword" context="#stay" String="freg" endRegion="Region5"/>
++				
++				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
++				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
++				
++				<AnyChar attribute="Keyword" context="#stay" String="+\-*/%^&gt;&lt;=" />
++				<RegExpr attribute="Normal Text" context="Function" String="&var;\s*(\()" lookAhead="true"/>
++				<RegExpr attribute="Data Type" context="Data" String=":(\s*&var;)+" lookAhead="true"/>
++				<RegExpr attribute="Variable" context="#stay" String="&var;"/>
++			</context>
++			
++			<context name="Data" attribute="Normal Text" lineEndContext="#pop">
++				<AnyChar attribute="Normal Text" context="#pop" String=",;)"/>
++				
++				<Float	attribute="Float"	context="#stay"/>
++				<Int	attribute="Decimal"	context="#stay"/>
++				
++				<IncludeRules context="##Doxygen" />
++				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="/"/>
++				<Detect2Chars attribute="Comment" context="Commentar 3" char="/" char1="*" beginRegion="Comment"/>
++				
++				<DetectChar attribute="Normal Text" context="Matrix Index" char="[" />
++				<DetectChar attribute="Data Type" context="#stay" char="y" />
++				<keyword attribute="Keyword" context="#stay" String="keywords"/>
++				<keyword attribute="Builtin Data Type" context="#stay" String="types"/>
++				<RegExpr attribute="Data Type" context="#stay" String="&var;"/>
++			</context>
++			
++			<context name="Matrix Index" attribute="Normal Text" dynamic="true"  lineEndContext="#pop">
++				<AnyChar attribute="Normal Text" context="#pop" String="]"/>
++				
++				<Float	attribute="Float"	context="#stay"/>
++				<Int	attribute="Decimal"	context="#stay"/>
++				<RegExpr attribute="Variable" context="#stay" String="&var;"/>
++			</context>
++			
++<!-- 			 TODO: Eliminate dynamic-->
++			<context name="Function" attribute="Normal Text" dynamic="true"  lineEndContext="#pop">
++				<RegExpr attribute="Function" context="#pop" String="&var;"/>
++			</context>
++			
++			<context name="String" attribute="String" lineEndContext="#pop">
++				<LineContinue attribute="String" context="#stay"/>
++				<HlCStringChar attribute="Char" context="#stay"/>
++				<DetectChar attribute="String" context="#pop" char="&quot;"/>
++			</context>
++			
++			<context name="Commentar 1" attribute="Comment" lineEndContext="#pop">
++				<DetectSpaces />
++				<DetectIdentifier />
++			</context>
++			
++			<context name="Commentar 2" attribute="Comment" lineEndContext="#pop">
++				<DetectSpaces />
++				<IncludeRules context="##Alerts" />
++				<DetectIdentifier />
++			</context>
++			
++			<context name="Commentar 3" attribute="Comment" lineEndContext="#stay">
++				<DetectSpaces />
++				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
++				<IncludeRules context="##Alerts" />
++				<DetectIdentifier />
++      		</context>
++		</contexts>
++		
++		<itemDatas>
++			<itemData name="Normal Text"		defStyleNum="dsNormal" />
++			<itemData name="Keyword"			defStyleNum="dsKeyword" />
++			<itemData name="Variable"			defStyleNum="dsBaseN"/>
++			<itemData name="Char"				defStyleNum="dsChar" />
++			<itemData name="Function"			defStyleNum="dsNormal" color="#008000"/>
++			<itemData name="Builtins"			defStyleNum="dsFunction"/>
++			<itemData name="Data Type"			defStyleNum="dsDataType"/>
++			<itemData name="Builtin Data Type"	defStyleNum="dsDataType" bold="1"/>
++			<itemData name="Decimal"			defStyleNum="dsDecVal"/>
++			<itemData name="Float"				defStyleNum="dsFloat"/>
++			<itemData name="String"				defStyleNum="dsString" />
++      		<itemData name="Comment"			defStyleNum="dsComment"/>
++		</itemDatas>
++	</highlighting>
++	
++	<general>
++		<comments>
++			<comment name="singleLine" start="//" />
++			<comment name="multiLine" start="/*" end="*/" region="Comment"/>
++		</comments>
++		<keywords casesensitive="1" />
++  	</general>
++</language>
+\ No newline at end of file
+
+
+
+From edulix at sheep.berlios.de  Sun May  1 17:09:04 2005
+From: edulix at sheep.berlios.de (Eduardo Robles Elvira at BerliOS)
+Date: Sun, 1 May 2005 17:09:04 +0200
+Subject: [Lea-svn] r109 - trunk
+Message-ID: <200505011509.j41F94DP003075@sheep.berlios.de>
+
+Author: edulix
+Date: 2005-05-01 17:09:02 +0200 (Sun, 01 May 2005)
+New Revision: 109
+
+Modified:
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+   trunk/lea.l
+   trunk/lea.y
+   trunk/script
+   trunk/simple-script
+   trunk/symbol-table-test.c
+   trunk/symbol-table.c
+   trunk/symbol-table.h
+Log:
+ * Now each symbol table can have its own fixed size. Affected files:
+symbol-table.h
+symbol-table-test.c
+symbol-table.c
+
+* Added support for a common symbol table for all kinds of symbols, by
+creating some temporal vars, eliminating, simplying and updating many functions.
+Affected files:
+lea-translator.c
+lea-translator.h
+lea.y
+
+* Fixed all the problems regarding use of boolean expressions (expr_bool) inside
+normal expressions (expr). Affected files:
+lea-translator.c
+lea-translator.h
+lea.y
+
+* Not much done in:
+lea.l
+simple-script
+script
+
+
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/lea-translator.c	2005-05-01 15:09:02 UTC (rev 109)
+@@ -21,9 +21,9 @@
+  * 
+  * See COPYING for details.
+  */
+- 
+- #include "lea-translator.h"
+ 
++#include "lea-translator.h"
++
+ /**
+  * \brief Automagical skeleton function creation from header's func. prototypes
+  * These skeleton functions were automagically created executing the command:
+@@ -39,11 +39,9 @@
+  * \param		
+  * \return	 
+  */
+-Tprogram *TRprogram(char *name, Tdeclarations_sym *declarations, Tsentence_list *sentences, Tmethod_sym *methods)
++void TRprogram(Tsentence_list *sentences)
+ {
+-	Tprogram *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -52,11 +50,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRlibrary(Tmethod_sym *previous_list, Tmethod_sym *actual)
++void TRprog_header(char *name)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -65,11 +61,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRalgorithm(char *name, Tinterface_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
++void TRalg_header(char *name)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -78,11 +72,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRfunction(Tmethod_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
++void TRfunc_header(char *name)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -91,11 +83,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRprocedure(Tmethod_sym *interface, Tdeclarations_sym *declarations, Tsentence_list *sentences)
++void TRproc_header(char *name)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -104,11 +94,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRfunc_header(char *name, Tother_sym_list *args_in, Tother_sym *arg_out)
++void TRin_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -117,11 +105,9 @@
+  * \param		
+  * \return	 
+  */
+-Tmethod_sym *TRproc_header(char *name, Tinterface_sym *args)
++void TRin_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+ {
+-	Tmethod_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -130,11 +116,9 @@
+  * \param		
+  * \return	 
+  */
+-Tinterface_sym *TRinterface_block_in(Tother_sym_list *actual_in_args, Tinterface_sym *interface)
++void TRout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+-	Tinterface_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -143,11 +127,9 @@
+  * \param		
+  * \return	 
+  */
+-Tinterface_sym *TRinterface_block_out(Tother_sym_list *actual_out_args, Tinterface_sym *interface)
++void TRout_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+ {
+-	Tinterface_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -156,11 +138,9 @@
+  * \param		
+  * \return	 
+  */
+-Tinterface_sym *TRproc_arg_in(Tother_sym_list *args)
++void TRinout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+ {
+-	Tinterface_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -169,157 +149,12 @@
+  * \param		
+  * \return	 
+  */
+-Tinterface_sym *TRproc_arg_out(Tother_sym_list *args)
++void TRinout_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+ {
+-	Tinterface_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tinterface_sym *TRproc_arg_inout(Tother_sym_list *args)
+-{
+-	Tinterface_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tinterface_sym *TRproc_arg_list(Tinterface_sym *actual, Tinterface_sym *next_list)
+-{
+-	Tinterface_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym_list *TRin_arg_list(Tother_sym *actual, Tother_sym_list *next_list)
+-{
+-	Tother_sym_list *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym_list *TRout_arg_list(Tother_sym *actual, Tother_sym_list *next_list)
+-{
+-	Tother_sym_list *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym_list *TRinout_arg_list(Tother_sym *actual, Tother_sym_list *next_list)
+-{
+-	Tother_sym_list *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRin_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRin_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRout_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRinout_var_dcl(Tid_list *id_list, char *type1, char *type2, char type3)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+- * \brief 
+- * 
+- * \param		
+- * \return	 
+- */
+-Tother_sym *TRinout_var_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+-{
+-	Tother_sym *ret;
+-
+-	return ret;
+-}
+-
+-/**
+  * \brief Allocate memory for an identifier list
+  * 
+  * \param	actual			Actual identifier
+@@ -360,7 +195,7 @@
+  * Tint_id_val structures are used when either an integer or a variable call can be needed
+  * 
+  * \param	value	Value to store
+- * \return	A 		Tint_id_val struct
++ * \return	 		Tint_id_val struct
+  */
+ Tint_id_val *TRint_id_val_int(int *value)
+ {
+@@ -382,17 +217,16 @@
+ 	return ret;
+ }
+ 
++
+ /**
+  * \brief 
+  * 
+  * \param		
+  * \return	 
+  */
+-Tdeclarations_sym *TRdeclarations_block(Tother_sym_list *consts_block, Tother_type_list *types_block, Tother_sym_list *vars_block)
++void TRconst_dcl_bool(Tid_list *id_list, bool *value)
+ {
+-	Tdeclarations_sym *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -401,11 +235,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_bool(Tid_list *id_list, bool *value, Tother_sym_list *next_list)
++void TRconst_dcl_int(Tid_list *id_list, int *value)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -414,11 +246,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_int(Tid_list *id_list, int *value, Tother_sym_list *next_list)
++void TRconst_dcl_float(Tid_list *id_list, float *value)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -427,11 +257,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_float(Tid_list *id_list, float *value, Tother_sym_list *next_list)
++void TRconst_dcl_char(Tid_list *id_list, char *value)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -440,11 +268,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_char(Tid_list *id_list, char *value, Tother_sym_list *next_list)
++void TRconst_dcl_str(Tid_list *id_list, char *value)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -453,11 +279,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_str(Tid_list *id_list, char *value, Tother_sym_list *next_list)
++void TRconst_dcl_reg(Tid_list *id_list)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -466,11 +290,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRconst_dcl_list_reg(Tid_list *id_list, Tother_type *reg, Tother_sym_list *next_list)
++void TRtypes_dcl_enum(Tid_list *id_list, Tstr_list *elements)
+ {
+-	Tother_sym_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -479,11 +301,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_type_list *TRtypes_dcl_list_enum(Tid_list *id_list, Tstr_list *elements, Tother_type_list *next_list)
++void TRtypes_dcl_var(Tid_list *id_list, char *type1, char *type2)
+ {
+-	Tother_type_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -492,11 +312,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_type_list *TRtypes_dcl_list_var(Tid_list *id_list, char *type1, char *type2, Tother_type_list *next_list)
++void TRtypes_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+ {
+-	Tother_type_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -505,11 +323,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_type_list *TRtypes_dcl_list_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type, Tother_type_list *next_list)
++void TRtypes_dcl_reg(Tid_list *id_list)
+ {
+-	Tother_type_list *ret;
+-
+-	return ret;
++	
+ }
+ 
+ /**
+@@ -518,9 +334,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_type_list *TRtypes_dcl_list_reg(Tid_list *id_list, Tother_type *reg, Tother_type_list *next_list)
++Tstr_list *TRstr_list(char *actual, Tstr_list *next_list)
+ {
+-	Tother_type_list *ret;
++	Tstr_list *ret;
+ 
+ 	return ret;
+ }
+@@ -531,11 +347,20 @@
+  * \param		
+  * \return	 
+  */
+-Tstr_list *TRstr_list(char *actual, Tstr_list *next_list)
++void TRvars_dcl_reg(Tid_list *name_list)
+ {
+-	Tstr_list *ret;
++	
++}
+ 
+-	return ret;
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
++void TRvars_noreg_dcl(Tid_list *id_list, char *type1, char *type2)
++{
++	
+ }
+ 
+ /**
+@@ -544,11 +369,20 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRvars_dcl_var(Tid_list *id_list, char *type1, char *type2, Tother_sym_list *next_list)
++void TRvars_noreg_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type)
+ {
+-	Tother_sym_list *ret;
++	
++}
+ 
+-	return ret;
++/**
++ * \brief 
++ * 
++ * \param		
++ * \return	 
++ */
++void TRregister()
++{
++	tmp_reg_type = NULL;
+ }
+ 
+ /**
+@@ -557,9 +391,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRvars_dcl_array(Tid_list *id_list, Tint_id_val_list *dimensions, char *type, Tother_sym_list *next_list)
++Tsentence_list *TRsentence_list(Tsentence *actual, Tsentence_list *next_list)
+ {
+-	Tother_sym_list *ret;
++	Tsentence_list *ret;
+ 
+ 	return ret;
+ }
+@@ -570,9 +404,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_sym_list *TRvars_dcl_reg(Tid_list *id_list, Tother_type *type, Tother_sym_list *next_list)
++Tsentence *TRif_statement(Texpr_bool *if_expr, Tsentence_list *if_sentence_list, Telif_statement_list *el_if_list, Tsentence_list *else_sentence_list)
+ {
+-	Tother_sym_list *ret;
++	Tsentence *ret;
+ 
+ 	return ret;
+ }
+@@ -583,9 +417,9 @@
+  * \param		
+  * \return	 
+  */
+-Tother_type *TRregister(Tother_sym_list *vars_list)
++Telif_statement *TRelif_statement(Texpr_bool *elif_expr, Tsentence_list *elif_sentence_list)
+ {
+-	Tother_type *ret;
++	Telif_statement *ret;
+ 
+ 	return ret;
+ }
+@@ -596,9 +430,9 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence_list *TRsentence_list(Tsentence *actual, Tsentence_list *next_list)
++Telif_statement_list *TRelif_statement_list(Telif_statement *actual, Telif_statement_list *next_list)
+ {
+-	Tsentence_list *ret;
++	Telif_statement_list *ret;
+ 
+ 	return ret;
+ }
+@@ -609,7 +443,7 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence *TRif_statement(Texpr_bool *if_expr, Tsentence_list *if_sentence_list, Telif_statement_list *el_if_list, Tsentence_list *else_sentence_list)
++Tsentence *TRassign_statement_assign(Tsentence *var_call, Tsentence *assign_statement)
+ {
+ 	Tsentence *ret;
+ 
+@@ -622,9 +456,9 @@
+  * \param		
+  * \return	 
+  */
+-Telif_statement *TRelif_statement(Texpr_bool *elif_expr, Tsentence_list *elif_sentence_list)
++Tsentence *TRassign_statement_expr(Tsentence *var_list, Texpr *expr)
+ {
+-	Telif_statement *ret;
++	Tsentence *ret;
+ 
+ 	return ret;
+ }
+@@ -635,9 +469,9 @@
+  * \param		
+  * \return	 
+  */
+-Telif_statement_list *TRelif_statement_list(Telif_statement *actual, Telif_statement_list *next_list)
++Tsentence *TRassign_statement_mult(Tsentence *var_list, Texpr_list_nested *mult_assign)
+ {
+-	Telif_statement_list *ret;
++	Tsentence *ret;
+ 
+ 	return ret;
+ }
+@@ -648,9 +482,9 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence *TRassign_statement_assign(Tsentence *var_call, Tsentence *assign_statement)
++Texpr_list_nested *TRmult_assign_list(Texpr_list_nested *actual, Texpr_list_nested *next_list)
+ {
+-	Tsentence *ret;
++	Texpr_list_nested *ret;
+ 
+ 	return ret;
+ }
+@@ -661,9 +495,9 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence *TRassign_statement_expr(Tsentence *var_list, Texpr *expr)
++Texpr_list_nested *TRmult_assign_list_expr(Texpr *expr, Texpr_list_nested *next_list)
+ {
+-	Tsentence *ret;
++	Texpr_list_nested *ret;
+ 
+ 	return ret;
+ }
+@@ -703,7 +537,7 @@
+  * \param		
+  * \return	 
+  */
+-Tsentence *TRoutput_input_statement(char *name, Texpr_list *expr_list)
++Tsentence *TRoutput_input_statement(char op, Texpr_list *expr_list)
+ {
+ 	Tsentence *ret;
+ 
+@@ -894,7 +728,7 @@
+  * \return				New linked list containing all the previous \
+  * expressions and the new one
+  */
+-Texpr_list *TRexpr_list(Texpr *actual, Texpr_list *next_list)
++Texpr_list *TRexpr_list_full(Texpr *actual, Texpr_list *next_list)
+ {
+ 	// Returning struct
+ 	Texpr_list *ret;
+@@ -1139,38 +973,14 @@
+ /**
+  * \brief Allocates storage for a boolean expression value
+  *
+- * \param	bool_val	Value to preserve
++ * \param	Texpr_bool	Value to preserve
+  * \return				Pointer to the expression holding the given value
+  */
+-Texpr *TRexpr_expr_bool(bool *bool_val)
++Texpr *TRexpr_expr_bool(Texpr_bool *expr_bool)
+ {
+ 	// Returning struct:
+-	Texpr		*ret;
+-	// Internal intermediate variable symbol:
+-	Tvar_sym	*internal_sym;
+-	// Fundamental storage structure:
+-	Ttype		*storage;
++	Texpr	*ret;
+ 	
+-	// Allocate needed memory
+-	ret							=	malloc(sizeof(Texpr));
+-	ret->type					=	malloc(sizeof(char));
+-	
+-	internal_sym				=	malloc(sizeof(Tvar_sym));
+-	
+-	storage						=	malloc(sizeof(Ttype));
+-	storage->type				=	malloc(sizeof(char));
+-	
+-	// Initialization
+-	*(storage->type)			=	Vintern_bool_val;
+-	storage->storage.bool_val	=	bool_val;
+-	
+-	// Note that internal vars don't have names:
+-	internal_sym->name			=	(char *)NULL;
+-	internal_sym->storage		=	storage;
+-	
+-	*(ret->type) 				=	OPvar_call;
+-	ret->expr.var_call			=	internal_sym;
+-	
+ 	return ret;
+ }
+ 
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/lea-translator.h	2005-05-01 15:09:02 UTC (rev 109)
+@@ -29,6 +29,9 @@
+ 	#include <stdlib.h>
+ 	#include <string.h>
+ 	#include <stdio.h>
++	#include "symbol-table.h"
++	// Number of list elements in symbol tables. *Should* be prime
++	#define PRIME 101
+ 	
+ 	/**
+ 	 * \brief defines of (V)value type and their assigned values
+@@ -120,6 +123,10 @@
+ 	#define OPreserved_call			74
+ 	#define OPreg_call				75
+ 	
++	#define Vreg_type_const_dcl		76
++	#define Vreg_type_types_dcl		77
++	#define Vreg_type_vars_dcl		78
++	
+ 	/****************************
+ 	*     Types definitions     *
+ 	****************************/
+@@ -699,6 +706,17 @@
+ 		Texpr *actual;
+ 		Texpr_list *next;
+ 	};
++	
++	/**
++	 * \brief Texpr_list_nested type definition
++	 * Used in mult_assign_statement/mult_assign_statement_list
++	 */
++	typedef struct Texpr_list_nested Texpr_list_nested;
++	
++	struct Texpr_list_nested {
++		Texpr_list *actual;
++		Texpr_list_nested *next;
++	};
+ 	 
+ 	/**
+ 	 * \brief Tmult_assign_statement type definition
+@@ -762,14 +780,69 @@
+ 	 */
+ 	 
+ 	/****************************
+-	*     Vars declarations     *
++	*    Global declarations    *
+ 	****************************/
+ 	/**
+-	* \brief Abstract Tree
+-	*/
++	 * \brief Main program tree
++	 */
+ 	
+-	Tprogram abstract_tree;
++	Tprogram *program;
+ 	
++	/**
++	 * \brief Symbols table
++	 * This is where symbols like variables (both local and global
++	 * ones) or methods are stored so that they ca be easily and
++	 * quickly retrieved.
++	 * 
++	 * The naming convention for each kind of symbol is:
++	 * 		- Global variables:			":global_var:<var_name>"
++	 * 		- Local variables:			":local_var:<method_name>@<var_name>"
++	 * 		- Global types:				":global_type:<type_name>"
++	 * 		- Local types:				":local_type:<method_name>@<type_name>"
++	 * 		- Methods:					":method:<method_name>"
++	 * 		- Vars inside registers:	":reg_var:<reg_name>@<var_name>"
++	 */
++	Tsym_table *sym_table;
++	
++	/**
++	 * \brief Temporal pointer to actual method (if any)
++	 * HACK: Sometimes the Lea translator needs to know exactly to which
++	 * method symbol does a local variable, or an call argument belong to.
++	 *
++	 * The solution provided by this hack is to create a temporal external
++	 * pointer that points to the method symbol while it's being constructed,
++	 * and thus Lea translation calls can store there the calling args,
++	 * get the method name in order to store a var in the symbol table (see
++	 * above), etc.
++	 *
++	 * It's set to NULL when Lea Translator is not inside a method (by default).
++	 */
++	
++ 	Tmethod_sym *tmp_method_sym;
++	
++	/**
++	 * \brief Name of actual register (if any)
++	 * HACK: Lea Translator needs to know the name(s) of a register when
++	 * declaring the vars inside of it, and it's inside tmp_reg_names where
++	 * it's stored in that case (temporally).
++	 *
++	 * It's set to NULL when we're not inside a register.
++	 */
++	Tid_list *tmp_reg_names;
++	
++	/**
++	 * \brief Kind of actual register (if any)
++	 * HACK: Lea Translator needs to know whether we're declaring a new register
++	 * type or a new register var directly
++	 *
++	 * It's set to NULL when we're not inside a register. Otherwise, it can
++	 * be set to:
++	 * 		- Vreg_type_const_dcl
++	 * 		- Vreg_type_types_dcl
++	 * 		- Vreg_type_vars_dcl
++	 */
++	char *tmp_reg_type;
++	
+ 	/****************************
+ 	*    Function prototypes    *
+ 	****************************/
+@@ -777,59 +850,30 @@
+ 	 * \Brief Prototypes of the (TR)translator functions
+ 	 */
+ 	// program: 
+-	Tprogram *TRprogram(char *, Tdeclarations_sym *, Tsentence_list *, Tmethod_sym *); 
+-	// library: 
+-	// 		NULL;  
+-	Tmethod_sym *TRlibrary(Tmethod_sym *, Tmethod_sym *); 
+-	// algorithm: 
+-	Tmethod_sym *TRalgorithm(char *, Tinterface_sym *, Tdeclarations_sym *, Tsentence_list *); 
+-	// function: 
+-	Tmethod_sym *TRfunction(Tmethod_sym *, Tdeclarations_sym *, Tsentence_list *); 
+-	// procedure: 
+-	Tmethod_sym *TRprocedure(Tmethod_sym *, Tdeclarations_sym *, Tsentence_list *); 
++	void TRprogram(Tsentence_list *); 
++	// prog_header: 
++	void TRprog_header(char *); 
++	// alg_header: 
++	void TRalg_header(char *); 
+ 	// func_header: 
+-	Tmethod_sym *TRfunc_header(char *, Tother_sym_list *, Tother_sym *); 
++	void TRfunc_header(char *); 
+ 	// proc_header: 
+-	Tmethod_sym *TRproc_header(char *, Tinterface_sym *); 
+-	// interface_block: 
+-	// 		NULL;  
+-	Tinterface_sym *TRinterface_block_in(Tother_sym_list *, Tinterface_sym *); 
+-	Tinterface_sym *TRinterface_block_out(Tother_sym_list *, Tinterface_sym *); 
+-	// proc_arg: 
+-	// 		NULL;  
+-	Tinterface_sym *TRproc_arg_in(Tother_sym_list *); 
+-	Tinterface_sym *TRproc_arg_out(Tother_sym_list *); 
+-	Tinterface_sym *TRproc_arg_inout(Tother_sym_list *); 
+-	// proc_arg_list: 
+-	Tinterface_sym *TRproc_arg_list(Tinterface_sym *, Tinterface_sym *);  
+-// 	Tinterface_sym *TRproc_arg_list(NULL, Tinterface_sym *); 
+-	// in_arg_list: 
+-	// 		NULL;  
+-	Tother_sym_list *TRin_arg_list(Tother_sym *, Tother_sym_list *); 
+-// 	Tother_sym_list *TRin_arg_list(NULL, Tother_sym *); 
+-	// out_arg_list: 
+-	// 		NULL;  
+-	Tother_sym_list *TRout_arg_list(Tother_sym *, Tother_sym_list *); 
+-// 	Tother_sym_list *TRout_arg_list(NULL, Tother_sym *); 
+-	// inout_arg_list: 
+-	// 		NULL;  
+-	Tother_sym_list *TRinout_arg_list(Tother_sym *, Tother_sym_list *); 
+-// 	Tother_sym_list *TRinout_arg_list(NULL, Tother_sym *); 
++	void TRproc_header(char *);
+ 	// in_var_dcl: 
+-// 	Tother_sym *TRin_var_dcl(Tid_list *, char *, NULL, NULL); 
+-// 	Tother_sym *TRin_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRin_var_dcl(Tid_list *, char *, char *, char); 
+-	Tother_sym *TRin_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
++// 	void TRin_var_dcl(Tid_list *, char *, NULL, NULL); 
++// 	void TRin_var_dcl(Tid_list *, char *, char *, NULL); 
++	void TRin_var_dcl(Tid_list *, char *, char *, char); 
++	void TRin_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// out_var_dcl: 
+-// 	Tother_sym *TRout_var_dcl(Tid_list *, char *, NULL, NULL); 
+-// 	Tother_sym *TRout_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRout_var_dcl(Tid_list *, char *, char *, char); 
+-	Tother_sym *TRout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
++// 	void TRout_var_dcl(Tid_list *, char *, NULL, NULL); 
++// 	void TRout_var_dcl(Tid_list *, char *, char *, NULL); 
++	void TRout_var_dcl(Tid_list *, char *, char *, char); 
++	void TRout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// inout_var_dcl: 
+-// 	Tother_sym *TRinout_var_dcl(Tid_list *, char *, NULL, NULL); 
+-// 	Tother_sym *TRinout_var_dcl(Tid_list *, char *, char *, NULL); 
+-	Tother_sym *TRinout_var_dcl(Tid_list *, char *, char *, char); 
+-	Tother_sym *TRinout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
++// 	void TRinout_var_dcl(Tid_list *, char *, NULL, NULL); 
++// 	void TRinout_var_dcl(Tid_list *, char *, char *, NULL); 
++	void TRinout_var_dcl(Tid_list *, char *, char *, char); 
++	void TRinout_var_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// id_list: 
+ 	Tid_list *TRid_list(char *, Tid_list *); 
+ // 	Tid_list *TRid_list(NULL, char *); 
+@@ -839,41 +883,30 @@
+ 	// int_id_val: 
+ 	Tint_id_val *TRint_id_val_int(int *);
+ 	Tint_id_val *TRint_id_val_id(char *); 
+-	// declarations_block: 
+-	Tdeclarations_sym *TRdeclarations_block(Tother_sym_list *, Tother_type_list *, Tother_sym_list *); 
+-	// consts_block: 
+-	// 		NULL;  
+ 	// const_dcl_list: 
+-	// 		NULL;  
+-	Tother_sym_list *TRconst_dcl_list_bool(Tid_list *, bool *, Tother_sym_list *); 
+-	Tother_sym_list *TRconst_dcl_list_int(Tid_list *, int *, Tother_sym_list *); 
+-	Tother_sym_list *TRconst_dcl_list_float(Tid_list *, float *, Tother_sym_list *); 
+-	Tother_sym_list *TRconst_dcl_list_char(Tid_list *, char *, Tother_sym_list *); 
+-	Tother_sym_list *TRconst_dcl_list_str(Tid_list *, char *, Tother_sym_list *); 
+-	Tother_sym_list *TRconst_dcl_list_reg(Tid_list *, Tother_type *, Tother_sym_list *); 
+-	// types_block: 
+-	// 		NULL;  
++	void TRconst_dcl_bool(Tid_list *, bool *); 
++	void TRconst_dcl_int(Tid_list *, int *); 
++	void TRconst_dcl_float(Tid_list *, float *); 
++	void TRconst_dcl_char(Tid_list *, char *); 
++	void TRconst_dcl_str(Tid_list *, char *); 
++	void TRconst_dcl_reg(Tid_list *); 
+ 	// types_dcl_list: 
+-	// 		NULL;  
+-	Tother_type_list *TRtypes_dcl_list_enum(Tid_list *, Tstr_list *, Tother_type_list *); 
+-// 	Tother_type_list *TRtypes_dcl_list_var(Tother_type_list *, Tid_list *, char *, NULL); 
+-	Tother_type_list *TRtypes_dcl_list_var(Tid_list *, char *, char *, Tother_type_list *); 
+-	Tother_type_list *TRtypes_dcl_list_array(Tid_list *, Tint_id_val_list *, char *, Tother_type_list *); 
+-	Tother_type_list *TRtypes_dcl_list_reg(Tid_list *, Tother_type *, Tother_type_list *); 
++	void TRtypes_dcl_enum(Tid_list *, Tstr_list *); 
++// 	void TRtypes_dcl_var(Tother_type_list *, Tid_list *, char *, NULL); 
++	void TRtypes_dcl_var(Tid_list *, char *, char *); 
++	void TRtypes_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
++	void TRtypes_dcl_reg(Tid_list *); 
+ 	// str_list: 
+ 	Tstr_list *TRstr_list(char *,Tstr_list *); 
+ // 	Tstr_list *TRstr_list(NULL, char *); 
+-	// vars_block: 
+-	// 		NULL;  
+-	// vars_dcl: 
+-	// 		NULL;  
+-// 	Tother_sym_list *TRvars_dcl_var(Tother_sym_list *, Tid_list *, char *, NULL); 
+-	Tother_sym_list *TRvars_dcl_var(Tid_list *, char *, char *, Tother_sym_list *); 
+-	Tother_sym_list *TRvars_dcl_array(Tid_list *, Tint_id_val_list *, char *, Tother_sym_list *); 
+-	Tother_sym_list *TRvars_dcl_reg(Tid_list *, Tother_type *, Tother_sym_list *); 
++	// vars_dcl:
++	void TRvars_dcl_reg(Tid_list *);
++	// vars_reg_dcl: 
++// 	void TRvars_noreg_dcl(Tid_list *, char *, NULL); 
++	void TRvars_noreg_dcl(Tid_list *, char *, char *); 
++	void TRvars_noreg_dcl_array(Tid_list *, Tint_id_val_list *, char *); 
+ 	// register: 
+-// 	Tother_type *TRregister(Tother_sym_list *); 
+-	Tother_type *TRregister(Tother_sym_list *); 
++	void TRregister(); 
+ 	// sentence_list: 
+ 	// 		NULL;  
+ 	Tsentence_list *TRsentence_list(Tsentence *, Tsentence_list *); 
+@@ -889,16 +922,16 @@
+ 	// assign_statement: 
+ 	Tsentence *TRassign_statement_assign(Tsentence *, Tsentence *); 
+ 	Tsentence *TRassign_statement_expr(Tsentence *, Texpr *); 
+-	/* TODO: Tsentence *TRassign_statement_mult($1, $3); 
++	Tsentence *TRassign_statement_mult(Tsentence *, Texpr_list_nested *); 
+ 	// mult_assign_list: 
+-			TRmult_assign_list($1, $3); 
+-			TRmult_assign_list_expr($1, $3); 
+-			TRmult_assign_list_expr($1, NULL); 
+-			TRmult_assign_list($1, NULL);  */
++	Texpr_list_nested *TRmult_assign_list(Texpr_list_nested *, Texpr_list_nested *); 
++	Texpr_list_nested *TRmult_assign_list_expr(Texpr *, Texpr_list_nested *); 
++// 	Tmult_assign *TRmult_assign_list_expr($1, NULL); 
++// 	Tmult_assign *TRmult_assign_list($1, NULL); 
+ 	// mult_assign_statement: 
+ 	Tsentence *TRmult_assign_statement(Tvar_sym_list *, Texpr_list *);
+ 	// output_input_statement: 
+-	Tsentence *TRoutput_input_statement(char *, Texpr_list *); 
++	Tsentence *TRoutput_input_statement(char, Texpr_list *); 
+ 	// while_loop: 
+ 	Tsentence *TRwhile_loop(Texpr_bool *, Tsentence_list *); 
+ 	// fromto_assign_statement: 
+@@ -917,8 +950,8 @@
+ 	Tsentence *TRprocedure_call(char *, Texpr_list *); 
+ 	// expr_list: 
+ 	// 		NULL;  
+-	Texpr_list *TRexpr_list(Texpr *, Texpr_list *); 
+-// 	Texpr_list *TRexpr_list(NULL, Texpr *); 
++	Texpr_list *TRexpr_list_full(Texpr *, Texpr_list *); 
++// 	Texpr_list *TRexpr_list_full(NULL, Texpr *); 
+ 	// expr_bool: 
+ 	Texpr_bool *TRexpr_bool_val(bool *); 
+ 	Texpr_bool *TRexpr_bool_struct(Tsentence *); 
+@@ -936,7 +969,7 @@
+ 	Texpr_bool *TRexpr_bool_fcall(Tsentence *); 
+ 	// expr: 
+ 	Texpr *TRexpr_int(int *); 
+-	Texpr *TRexpr_expr_bool(bool *); 
++	Texpr *TRexpr_expr_bool(Texpr_bool *); 
+ 	Texpr *TRexpr_float(float *); 
+ 	Texpr *TRexpr_str(char *); 
+ 	Texpr *TRexpr_struct(Tsentence *); 
+
+Modified: trunk/lea.l
+===================================================================
+--- trunk/lea.l	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/lea.l	2005-05-01 15:09:02 UTC (rev 109)
+@@ -25,6 +25,7 @@
+  */
+ 	#include <stdlib.h>
+ 	#include <string.h>
++	#include "symbol-table.h"
+  	#include "lea-translator.h"
+ 	#include "lea.tab.h"
+ 	
+@@ -70,9 +71,9 @@
+ ^[ \t]*\n				{ printf("\nNULL LINE \n"); }
+ [ \t]+					{  }
+ 
+-prog					{ printf("PROG "); return PROG;		}
+-alg						{ printf("ALG "); return ALG;		}
+-func					{ printf("FUNC "); return FUNC;		}
++prog					{ printf("PROG "); return PROG;	}
++alg						{ printf("ALG "); return ALG;	}
++func					{ printf("FUNC "); return FUNC;	}
+ entrada[ \t]+de[ \t]+	{ printf("IN_STREAM "); return IN_STREAM;	}
+ salida[ \t]+de[ \t]+	{ printf("OUT_STREAM "); return OUT_STREAM; }
+ entrada[ \t]+y[ \t]+salida[ \t]+de[ \t]+	{ printf("INOUT_STREAM "); return INOUT_STREAM; }
+@@ -101,6 +102,10 @@
+ prin					{ printf("START "); return START;		}
+ fin						{ printf("END\n"); return END;		}
+ 
++
++escribir				{ printf("PRINT "); return PRINT;	}
++leer					{ printf("READ "); return READ;		}
++
+ [ \t]+de[ \t]+			{ printf("OF "); return OF;		}
+ 
+ si						{ printf("IF "); return IF;		}
+
+Modified: trunk/lea.y
+===================================================================
+--- trunk/lea.y	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/lea.y	2005-05-01 15:09:02 UTC (rev 109)
+@@ -59,13 +59,14 @@
+ 	Tsentence 				*Tsentence;
+ 	Tassign_statement		*Tassign_statement;
+ 	Texpr_list				*Texpr_list;
++	Texpr_list_nested		*Texpr_list_nested;
+ 	Texpr_bool				*Texpr_bool;
+ 	Texpr					*Texpr;
+ // \endlist
+ }
+ 
+ %token PROG ALG FUNC IN_STREAM OUT_STREAM INOUT_STREAM DEV PROC END IN OUT INOUT CONSTS TYPES VARS START OF
+-%token IF ELSE IS_NULL ENDIF WHILE ENDWHILE FROM TO ENDFROMTO IS_NULL ARRAY REG ENDREG
++%token IF ELSE IS_NULL ENDIF WHILE ENDWHILE FROM TO ENDFROMTO IS_NULL ARRAY REG ENDREG PRINT READ
+ 
+ %token <int_val>	INT_VAL
+ %token <bool_val>	BOOL_VAL
+@@ -79,27 +80,19 @@
+  * NOTE: tabulation added manually
+  */
+ %type <Tstr_list>				str_list
+-%type <Texpr>					expr
+-%type <Tother_type_list>		types_dcl_list types_block
++%type <Texpr>					expr expr_op expr_val
+ %type <Tid_list>				id_list
+-%type <Tprogram>				program
+ %type <Telif_statement>			elif_statement
+-%type <Tsentence>				if_statement assign_statement mult_assign_statement output_input_statement while_loop fromto_loop function_call variable_call struct_call procedure_call sentence
++%type <Tsentence>				if_statement assign_statement mult_assign_statement output_input_statement while_loop fromto_loop function_call variable_call struct_call procedure_call sentence input_statement output_statement
+ %type <Tint_id_val_list>		int_val_list array_dimensions
+-%type <Texpr_list>				expr_list
+-%type <Tdeclarations_sym>		declarations_block
++%type <Texpr_list>				expr_list expr_list_full
++%type <Texpr_list_nested>		mult_assign mult_assign_list
+ %type <Tint_id_val>				int_id_val
+ %type <Tassign_statement>		fromto_assign_statement
+ %type <Texpr_bool>				expr_bool
+-%type <Tinterface_sym>			interface_block proc_arg proc_arg_list
+ %type <Tvar_sym_list>			variable_list
+-%type <Tother_sym_list>			in_arg_list out_arg_list inout_arg_list const_dcl_list vars_dcl vars_reg_dcl consts_block vars_block
+-%type <Tmethod_sym>				library algorithm function procedure func_header proc_header
+-%type <Tother_sym>				in_var_dcl out_var_dcl inout_var_dcl
+ %type <Telif_statement_list>	elif_statement_list
+ %type <Tsentence_list>			sentence_list sentence_list_block
+-%type <Tother_type>				register
+-%type <str_val>					prog_header alg_header
+ // \endlist
+ 
+ %start	program
+@@ -120,23 +113,19 @@
+ 	declarations_block
+ 	sentence_list_block
+ 	library
+-		{ $$ = TRprogram($1, $2, $3, $4); }
++		{ TRprogram($3); }
+ ;
+ 
+ prog_header:
+ 	PROG ID '\n'
+-		{ $$ = $2; }
++		{ TRprog_header($2); }
+ ;
+ 
+ library:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| library algorithm
+-		{ $$ = TRlibrary($1, $2); }
+ 	| library function
+-		{ $$ = TRlibrary($1, $2); }
+ 	| library procedure
+-		{ $$ = TRlibrary($1, $2); }
+ ;
+ 
+ algorithm:
+@@ -144,125 +133,106 @@
+ 	interface_block
+ 	declarations_block
+ 	sentence_list_block
+-		{ $$ = TRalgorithm($1, $2, $3, $4); }
+ ;
+ 
+ function:
+ 	func_header
+ 	declarations_block
+ 	sentence_list_block
+-		{ $$ = TRfunction($1, $2, $3); }
+ ;
+ 
+ procedure:
+ 	proc_header
+ 	declarations_block
+ 	sentence_list_block
+-		{ $$ = TRprocedure($1, $2, $3); }
+ ;
+ 
+ alg_header:
+ 	ALG ID '\n'
+-		{ $$ = $2; }
++		{ TRalg_header($2); }
+ ;
+ 
+ func_header:
+-	FUNC ID '(' in_arg_list ')'  DEV '(' out_var_dcl ')' '\n'
+-		{ $$ = TRfunc_header($2, $4, $8); }
++	FUNC ID 
++		{ TRfunc_header($2); }
++	'(' in_arg_list ')'  DEV '(' out_var_dcl ')' '\n'
+ ;
+ 
+ proc_header:
+-	PROC ID '(' proc_arg_list ')' '\n'
+-		{ $$ = TRproc_header($2, $4); }
++	PROC ID 
++		{ TRproc_header($2); }
++		'(' proc_arg_list ')' '\n'
+ ;
+ 
+ interface_block:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| IN in_arg_list '\n'
+ 	interface_block
+-		{ $$ = TRinterface_block_in($2, $4); }
+ 	| OUT out_arg_list '\n'
+ 	interface_block
+-		{ $$ = TRinterface_block_out($2, $4); }
+ ;
+ 
+ proc_arg:
+ 	EPSILON
+-		{ $$ = NULL; }
+-	| IN in_arg_list 
+-		{ $$ = TRproc_arg_in($2); }
++	| IN in_arg_list
+ 	| OUT out_arg_list
+-		{ $$ = TRproc_arg_out($2); }
+ 	| INOUT inout_arg_list
+-		{ $$ = TRproc_arg_inout($2); }
+ ;
+ 
+ proc_arg_list:
+ 	proc_arg ';' proc_arg_list
+-		{ $$ = TRproc_arg_list($1, $3);  }
+ 	| proc_arg
+-		{ $$ = TRproc_arg_list($1, NULL); }
+ ;
+ 
+ in_arg_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| in_var_dcl ',' in_arg_list
+-		{ $$ = TRin_arg_list($1, $3); }
+ 	| in_var_dcl
+-		{ $$ = TRin_arg_list($1, NULL); }
+ ;
+ 
+ out_arg_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| out_var_dcl ',' out_arg_list
+-		{ $$ = TRout_arg_list($1, $3); }
+ 	| out_var_dcl
+-		{ $$ = TRout_arg_list($1, NULL); }
+ ;
+ 
+ inout_arg_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| inout_var_dcl ',' inout_arg_list
+-		{ $$ = TRinout_arg_list($1, $3); }
+ 	| inout_var_dcl
+-		{ $$ = TRinout_arg_list($1, NULL); }
+ ;
+ 
+ in_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRin_var_dcl($1, $3, (char *)NULL, (char)NULL); }
++		{ TRin_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRin_var_dcl($1, $3, $5, (char)NULL); }
++		{ TRin_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF IN_STREAM ID
+-		{ $$ = TRin_var_dcl($1, $3, $6, 's'); }
++		{ TRin_var_dcl($1, $3, $6, 's'); }
+ 	| id_list  ':' ARRAY array_dimensions OF ID
+-		{ $$ = TRin_var_dcl_array($1, $4, $6); }
++		{ TRin_var_dcl_array($1, $4, $6); }
+ ;
+ 
+ out_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
++		{ TRout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRout_var_dcl($1, $3, $5, (char)NULL); }
++		{ TRout_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF OUT_STREAM ID
+-		{ $$ = TRout_var_dcl($1, $3, $6, 's'); }
++		{ TRout_var_dcl($1, $3, $6, 's'); }
+ 	| id_list ':' ARRAY array_dimensions OF ID
+-		{ $$ = TRout_var_dcl_array($1, $4, $6); }
++		{ TRout_var_dcl_array($1, $4, $6); }
+ ;
+ 
+ inout_var_dcl:
+ 	id_list   ':' ID
+-		{ $$ = TRinout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
++		{ TRinout_var_dcl($1, $3, (char *)NULL, (char)NULL); }
+ 	| id_list ':' ID OF ID
+-		{ $$ = TRinout_var_dcl($1, $3, $5, (char)NULL); }
++		{ TRinout_var_dcl($1, $3, $5, (char)NULL); }
+ 	| id_list ':' ID OF INOUT_STREAM ID
+-		{ $$ = TRinout_var_dcl($1, $3, $6, 's'); }
++		{ TRinout_var_dcl($1, $3, $6, 's'); }
+ 	| id_list ':' ARRAY array_dimensions OF ID
+-		{ $$ = TRinout_var_dcl_array($1, $4, $6); }
++		{ TRinout_var_dcl_array($1, $4, $6); }
+ ;
+ 
+ id_list:
+@@ -295,65 +265,57 @@
+ 	consts_block
+ 	types_block
+ 	vars_block
+-		{ $$ = TRdeclarations_block($1, $2, $3); }
+ ;
+ 
+ consts_block:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| CONSTS '\n'
+ 		const_dcl_list
+-		{ $$ = $3; }
+ ;
+ 
+ const_dcl_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+-	| id_list ':' BOOL_VAL '\n'
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_bool($1, $3, $5); }
++	| const_dcl const_dcl_list
++;
++
++const_dcl:
++	id_list ':' BOOL_VAL '\n'
++		{ TRconst_dcl_bool($1, $3); }
+ 	| id_list ':' INT_VAL '\n'
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_int($1, $3, $5); }
++		{ TRconst_dcl_int($1, $3); }
+ 	| id_list ':' FLOAT_VAL '\n'
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_float($1, $3, $5); }
++		{ TRconst_dcl_float($1, $3); }
+ 	| id_list ':' CHAR_VAL '\n'
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_char($1, $3, $5); }
++		{ TRconst_dcl_char($1, $3); }
+ 	| id_list ':' STR_VAL '\n'
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_str($1, $3, $5); }
+-	| id_list ':' register
+-	const_dcl_list
+-		{ $$ = TRconst_dcl_list_reg($1, $3, $4); }
++		{ TRconst_dcl_str($1, $3); }
++	| id_list ':' reg_init 
++		{ TRconst_dcl_reg($1); }
++	register
+ ;
+ 
+ types_block:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| TYPES '\n'
+ 		types_dcl_list
+-		{ $$ = $3; }
+ ;
+ types_dcl_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+-	| id_list ':' '(' str_list ')' '\n'
+-	types_dcl_list
+-		{ $$ = TRtypes_dcl_list_enum($1, $4, $7); }
++	| types_dcl types_dcl_list
++;
++
++types_dcl:
++	id_list ':' '(' str_list ')' '\n'
++		{ TRtypes_dcl_enum($1, $4); }
+ 	| id_list ':' ID '\n'
+-	types_dcl_list
+-		{ $$ = TRtypes_dcl_list_var($1, $3, NULL, $5); }
++		{ TRtypes_dcl_var($1, $3, NULL); }
+ 	| id_list ':' ID OF ID '\n'
+-	types_dcl_list
+-		{ $$ = TRtypes_dcl_list_var($1, $3, $5, $7); }
++		{ TRtypes_dcl_var($1, $3, $5); }
+ 	| id_list ':' ARRAY array_dimensions OF ID '\n'
+-	types_dcl_list
+-		{ $$ = TRtypes_dcl_list_array($1, $4, $6, $8); }
+-	| id_list ':' register
+-	types_dcl_list
+-		{ $$ = TRtypes_dcl_list_reg($1, $3, $4); }
++		{ TRtypes_dcl_array($1, $4, $6); }
++	| id_list ':' reg_init 
++		{ TRtypes_dcl_reg($1); }
++	register
+ ;
+ 
+ str_list:
+@@ -365,42 +327,42 @@
+ 
+ vars_block:
+ 	EPSILON
+-		{ $$ = NULL; }
+ 	| VARS '\n'
+ 		vars_dcl
+-		{ $$ = $3; }
+ ;
+ 
+ vars_dcl:
+-	vars_reg_dcl
+-		{ $$ = $1; }
+-	| id_list ':' register  //TODO: !!!!!
++	EPSILON
++	| vars_noreg_dcl vars_dcl
++	| id_list':' reg_init
++		{ TRvars_dcl_reg($1); }
++	register  //TODO: !!!!!
+ 	vars_dcl
+-		{ $$ = TRvars_dcl_reg($1, $3, $4); }
+ ;
+-vars_reg_dcl:
++
++vars_noreg_dcl_list:
+ 	EPSILON
+-		{ $$ = NULL; }
+-	| id_list ':' ID '\n'
+-	vars_reg_dcl
+-		{ $$ = TRvars_dcl_var($1, $3, NULL, $5); }
++	| vars_noreg_dcl vars_noreg_dcl_list
++;
++
++vars_noreg_dcl:
++	id_list ':' ID '\n'
++		{ TRvars_noreg_dcl($1, $3, NULL); }
+ 	| id_list ':' ID OF ID '\n'
+-	vars_reg_dcl
+-		{ $$ = TRvars_dcl_var($1, $3, $5, $7); }
++		{ TRvars_noreg_dcl($1, $3, $5); }
+ 	| id_list ':' ARRAY array_dimensions OF ID '\n'
+-	vars_reg_dcl
+-		{ $$ = TRvars_dcl_array($1, $4, $6, $8); }
++		{ TRvars_noreg_dcl_array($1, $4, $6); }
+ ;
+ 
+-register:
++reg_init:
+ 	REG '\n'
+-		vars_reg_dcl
+-	ENDREG '\n'
+-		{ $$ = TRregister($3); }
+ 	| '\n' REG '\n'
+-		vars_reg_dcl
++;
++
++register:
++		vars_noreg_dcl_list
+ 	ENDREG '\n'
+-		{ $$ = TRregister($4); }
++		{ TRregister(); }
+ ;
+ 
+ sentence_list_block:
+@@ -436,8 +398,6 @@
+ 		{ $$ = $1; }
+ 	| fromto_loop
+ 		{ $$ = $1; }
+-	| function_call '\n'
+-		{ $$ = $1; }
+ 	| procedure_call
+ 		{ $$ = $1; }
+ ;
+@@ -481,10 +441,10 @@
+ 		{ $$ = TRassign_statement_assign($1, $3); }
+ 	| struct_call ASSIGN expr
+ 		{ $$ = TRassign_statement_expr($1, $3); }
+-	/* TODO: | struct_call ASSIGN mult_assign
+-		{ $$ = TRassign_statement_mult($1, $3); }*/
++	| struct_call ASSIGN mult_assign
++		{ $$ = TRassign_statement_mult($1, $3); }
+ ;
+-/* TODO:
++
+ mult_assign:
+ 	'{' mult_assign_list '}'
+ 		{ $$ = $2; }
+@@ -498,20 +458,35 @@
+ 	| expr
+ 		{ $$ = TRmult_assign_list_expr($1, NULL); }
+ 	| mult_assign
+-		{ $$ = TRmult_assign_list($1, NULL); }*/
++		{ $$ = TRmult_assign_list($1, NULL); }
+ ;
+ 
+ mult_assign_statement:
+-	variable_list ASSIGN expr_list '\n'
+-		{ $$ = TRmult_assign_statement($1, $3); }
++	variable_call ',' variable_list ASSIGN expr_list_full '\n'
++		{ $$ = TRmult_assign_statement(TRvariable_list($1, $3), $5); }
+ ;
+ 
+-// We'll need course need to check that id = (PRINT|READ)
+ output_input_statement:
+-	ID expr_list '\n'
+-		{ $$ = TRoutput_input_statement($1, $2); }
++	output_statement
++		{ $$ = $1; }
++	| input_statement
++		{ $$ = $1; }
+ ;
+ 
++input_statement:
++	READ expr_list_full '\n'
++		{ $$ = TRoutput_input_statement('i', $2); }
++	| READ '(' expr_list_full ')' '\n'
++		{ $$ = TRoutput_input_statement('i', $3); }
++;
++
++output_statement:
++	PRINT expr_list_full '\n'
++		{ $$ = TRoutput_input_statement('o', $2); }
++	| PRINT '(' expr_list_full ')' '\n'
++		{ $$ = TRoutput_input_statement('o', $3); }
++;
++
+ while_loop:
+ 	WHILE expr_bool '\n'
+ 		sentence_list
+@@ -539,7 +514,7 @@
+ ;
+ 
+ variable_call:
+-	ID '[' expr_list ']'
++	ID '[' expr_list_full ']'
+ 		{ $$ = TRvariable_call($1, $3); }
+ 	| ID
+ 		{  $$ = TRvariable_call_node($1); }
+@@ -567,19 +542,26 @@
+ expr_list:
+ 	EPSILON
+ 		{ $$ = NULL; }
+-	| expr ',' expr_list
+-		{ $$ = TRexpr_list($1, $3); }
++	| expr_list_full
++		{ $$ = $1; }
++;
++
++expr_list_full:
++	expr ',' expr_list_full
++		{ $$ = TRexpr_list_full($1, $3); }
+ 	| expr
+-		{ $$ = TRexpr_list($1, NULL); }
++		{ $$ = TRexpr_list_full($1, NULL); }
+ ;
+ 
+ expr_bool:
+ 	BOOL_VAL
+ 		{ $$ = TRexpr_bool_val($1); }
+-	| '(' expr_bool ')'
+-		{ $$ = $2; }
++	| function_call
++		{ $$ = TRexpr_bool_fcall($1); }
+ 	| struct_call
+ 		{ $$ = TRexpr_bool_struct($1); }
++	| '(' expr_bool ')'
++		{ $$ = $2; }
+ 	| NOT_OP expr_bool %prec NEG
+ 		{ $$ = TRexpr_bool_not($2); }
+ 	| expr_bool AND_OP expr_bool
+@@ -598,44 +580,52 @@
+ 		{ $$ = TRexpr_bool('g', $1, $3); }
+ 	| expr NOT_EQ expr
+ 		{ $$ = TRexpr_bool('n', $1, $3); }
+-	| function_call
+-		{ $$ = TRexpr_bool_fcall($1); }
+ ;
+ 
+-expr:
++expr_val:
+ 	INT_VAL
+ 		{ $$ = TRexpr_int($1); }
+-	// TODO: Sometimes a expr_bool can also be considered an expr,
+-	// usually when it reffers to a boolean variable, but if we
+-	// add here expr_bool 91 reduce/reduce problems appear!
+-	| BOOL_VAL
+-		{ $$ = TRexpr_expr_bool($1); }
+ 	| FLOAT_VAL
+ 		{ $$ = TRexpr_float($1); }
+ 	| STR_VAL
+ 		{ $$ = TRexpr_str($1); }
++	| function_call
++		{ $$ = TRexpr_fcall($1); }
+ 	| struct_call
+ 		{ $$ = TRexpr_struct($1); }
+-	| expr '+' expr
++;
++
++expr_op:
++	expr_val
++		{ $$ = $1; }
++	| expr_op '+' expr_op
+ 		{ $$ = TRexpr('+', $1, $3); }
+-	| expr '-' expr
++	| expr_op '-' expr_op
+ 		{ $$ = TRexpr('-', $1, $3); }
+-	| expr '*' expr
++	| expr_op '*' expr_op
+ 		{ $$ = TRexpr('*', $1, $3); }
+-	| expr '/' expr
++	| expr_op '/' expr_op
+ 		{ $$ = TRexpr('/', $1, $3); }
+-	| expr '%' expr
++	| expr_op '%' expr_op
+ 		{ $$ = TRexpr('%', $1, $3); }
+-	| expr '^' expr
++	| expr_op '^' expr_op
+ 		{ $$ = TRexpr('^', $1, $3); }
+-	| '-' expr %prec NEG
++	| '-' expr_op %prec NEG
+ 		{ $$ = TRexpr('n', $2, NULL); }
+-	| '(' expr ')'
++	| '+' expr_op %prec NEG
+ 		{ $$ = $2; }
+-	| function_call
+-		{ $$ = TRexpr_fcall($1); }
++	| '(' expr_op ')'
++		{ $$ = $2; }
+ ;
+ 
++expr:
++	expr_bool
++		{ $$ = TRexpr_expr_bool($1); }
++	| expr_op
++		{ $$ = $1; }
++;
++
++
+ EPSILON:
+ ;
+ 
+@@ -645,7 +635,6 @@
+ {
+ 	extern FILE *yyin;
+ 	
+-	
+ 	if (argc > 1) {
+ 		if (!(yyin = fopen(argv[1], "r"))) {
+ 			fprintf(stderr, "\nUnable to open source file: %s\n", argv[1]);
+@@ -653,6 +642,12 @@
+ 		}
+ 	}
+ 	
++	//Initialization:
++	sym_table		= initSymTable(PRIME);
++	tmp_method_sym	= NULL;
++	tmp_reg_names	= NULL;
++	tmp_reg_type	= NULL;
++	
+ 	yyparse();
+ 	
+ 	return 0;
+
+Modified: trunk/script
+===================================================================
+--- trunk/script	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/script	2005-05-01 15:09:02 UTC (rev 109)
+@@ -89,7 +89,7 @@
+ 			freg
+ 	prin
+ 		//a := {1, 2, 3}
+-		df := (f y g) y a
++		df := (f y g) o a
+ 		a[3] := 2
+ 		llamada_a_un_func_o_proc(45, 4., a)
+ 		escribir pi
+
+Modified: trunk/simple-script
+===================================================================
+--- trunk/simple-script	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/simple-script	2005-05-01 15:09:02 UTC (rev 109)
+@@ -74,7 +74,7 @@
+ 			i,j : entero
+ 		prin
+ 			i := j := 1
+-			
++			a := verdadero
+ 			mientras i<=long(t)
+ 				si t[i]=sep y i>1:
+ 					j := j + 1
+@@ -94,13 +94,13 @@
+ 	
+ 	func count(t:tabla[MAX_ARRAY] de cadena) dev (l: entero)
+ 	var
+-		f : logico
++		enc : logico
+ 	prin
+ 		si (long(l[1]) <> 0):
+-			f := falso
++			enc := falso
+ 			l := 1
+ 			
+-			mientras l <= MAX_ARRAY y (no f)
++			mientras l <= MAX_ARRAY y (no enc)
+ 				si long(t[l]) = 0:
+ 					enc:=cierto
+ 				| otras:
+
+Modified: trunk/symbol-table-test.c
+===================================================================
+--- trunk/symbol-table-test.c	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/symbol-table-test.c	2005-05-01 15:09:02 UTC (rev 109)
+@@ -25,15 +25,15 @@
+ #include <stdio.h>
+ #include "symbol-table.c"
+ 
+-void debug(Tsym_list **symTable)
++void debug(Tsym_table *symTable)
+ {
+ 	unsigned int i, j;
+ 	Tsym_list	*symList;
+ 	
+-	for (i = 0; i < PRIME; i++)
++	for (i = 0; i < symTable->PRIME; i++)
+ 	{
+ 		printf("hash: %i\n", i);
+-		symList	= symTable[i];
++		symList	= symTable->elements[i];
+ 		j=0;
+ 		while(strcmp(symList->data, ""))
+ 		{
+@@ -49,8 +49,9 @@
+ {
+ 	int task;
+ 	char *key;
++	const unsigned int PRIME = 101;
+ 	uint32_t hash;
+-	Tsym_list **mySymTable = initSymTable();
++	Tsym_table *mySymTable = initSymTable(PRIME);
+ 	
+ 	while(1)
+ 	{
+
+Modified: trunk/symbol-table.c
+===================================================================
+--- trunk/symbol-table.c	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/symbol-table.c	2005-05-01 15:09:02 UTC (rev 109)
+@@ -87,17 +87,19 @@
+  * 
+  * \return	symTable	Initialized symbol table
+  */
+-Tsym_list **initSymTable()
++Tsym_table *initSymTable(const unsigned int PRIME)
+ {
+ 	// Allocate memory:
+-	Tsym_list **symTable = malloc(PRIME * sizeof(Tsym_list *));
++	Tsym_table *symTable = malloc(sizeof(Tsym_table));
++	symTable->elements = malloc(PRIME * sizeof(Tsym_list *));
++	symTable->PRIME = PRIME;
+ 	unsigned int i;
+ 	
+ 	// Initialize memory:
+ 	for (i = 0; i < PRIME; i++)
+ 	{
+-		symTable[i] = malloc (sizeof(Tsym_list));
+-		symTable[i]->data = calloc(1, sizeof(char));
++		symTable->elements[i] = malloc (sizeof(Tsym_list));
++		symTable->elements[i]->data = calloc(1, sizeof(char));
+ 	}
+ 	
+ 	return symTable;
+@@ -111,11 +113,11 @@
+  * \param	data		The data used as the searching key
+  * \return	!found		Return 0 (false) only if that data already existed; 1 (true) otherwise
+  */
+-bool addSym(Tsym_list **symTable, const char *data, const void *sym)
++bool addSym(Tsym_table *symTable, const char *data, const void *sym)
+ {
+ 	size_t		len					= strlen(data);					// Data string length
+-	uint32_t	hash				= getHash(data, len) % PRIME;	// Array index
+-	Tsym_list 	*symListActual		= symTable[hash],				// Actual symList element
++	uint32_t	hash				= getHash(data, len) % symTable->PRIME;	// Array index
++	Tsym_list 	*symListActual		= symTable->elements[hash],		// Actual symList element
+ 				*symListNew;										// Smybol to add
+ 	bool		found				= 0;							// Searching loop iterate condition
+ 	
+@@ -137,10 +139,10 @@
+ 		symListNew			= malloc(sizeof(Tsym_list));
+ 		symListNew->data	= malloc(len);
+ 		symListNew->sym		= (void *)sym;
+-		symListNew->next	= symTable[hash];
++		symListNew->next	= symTable->elements[hash];
+ 		strcpy(symListNew->data, data);
+ 		
+-		symTable[hash] = symListNew;
++		symTable->elements[hash] = symListNew;
+ 	}
+ 	
+ 	return !found;
+@@ -153,11 +155,11 @@
+  * \param	data		The data used as the searching key
+  * \return	found		Return 1 (true) only if data was deleted successfully; 0 (false) otherwise
+  */
+-bool delSym(Tsym_list **symTable, const char *data)
++bool delSym(Tsym_table *symTable, const char *data)
+ {
+ 	size_t		len					= strlen(data);					// Data string length
+-	uint32_t	hash				= getHash(data, len) % PRIME;	// Array index
+-	Tsym_list	*symListPrevious	= symTable[hash],				// Previous symlist element
++	uint32_t	hash				= getHash(data, len) % symTable->PRIME;	// Array index
++	Tsym_list	*symListPrevious	= symTable->elements[hash],		// Previous symlist element
+ 				*symListActual		= symListPrevious;				// Actual symList element
+ 	bool		found				= 0;							// Searching loop iterate condition
+ 	
+@@ -173,7 +175,7 @@
+ 			if (symListPrevious != symListActual)
+ 				symListPrevious->next = symListActual->next;
+ 			else
+-				symTable[hash] = symListActual->next;
++				symTable->elements[hash] = symListActual->next;
+ 			
+ 			free(symListActual->data);
+ 			free(symListActual);
+@@ -197,12 +199,12 @@
+  * \param	data		The data used as the searching key
+  * \return	ret			symbol retrieved
+  */
+-const void *getSym(Tsym_list **symTable, const char *data)
++const void *getSym(Tsym_table *symTable, const char *data)
+ {
+ 	const void	*ret			= NULL;							// Returning value
+ 	size_t		len				= strlen(data);					// Data string length
+-	uint32_t	hash			= getHash(data, len) % PRIME;	// Array index
+-	Tsym_list	*symList0		= symTable[hash],				// For extreme cases
++	uint32_t	hash			= getHash(data, len) % symTable->PRIME;	// Array index
++	Tsym_list	*symList0		= symTable->elements[hash],		// For extreme cases
+ 				*symList1		= symList0,						// For extreme cases
+ 				*symListActual	= symList0,						// Actual symList element
+ 				*symListActualNextTemp;							// Temporal pointer
+@@ -227,10 +229,10 @@
+ 				symList1->next			= symListActualNextTemp;
+ 			} else if(symList1 != symListActual)
+ 			{
+-				symListActualNextTemp	= symListActual->next;
+-				symListActual->next		= symList1;
+-				symList1->next			= symListActualNextTemp;
+-				symTable[hash]			= symListActual;
++				symListActualNextTemp		= symListActual->next;
++				symListActual->next			= symList1;
++				symList1->next				= symListActualNextTemp;
++				symTable->elements[hash]	= symListActual;
+ 			}
+ 		// Not found, reiterate:
+ 		} else {
+
+Modified: trunk/symbol-table.h
+===================================================================
+--- trunk/symbol-table.h	2005-04-13 17:39:14 UTC (rev 108)
++++ trunk/symbol-table.h	2005-05-01 15:09:02 UTC (rev 109)
+@@ -47,8 +47,6 @@
+ 		+((const uint8_t *)(d))[0])
+ 	#endif
+ 	
+-	const unsigned int PRIME = 101;
+-	
+ 	/**
+ 	 * \brief Tsym_list type definition
+ 	 */
+@@ -61,12 +59,21 @@
+ 	};
+ 	
+ 	/**
++	 * \brief Tsym_table definition
++	 */
++	typedef struct {
++		Tsym_list **elements;
++		// number of list elements
++		unsigned int PRIME;
++	} Tsym_table;
++	
++	/**
+ 	 * Prototypes definition
+ 	 */
+ 	
+-	Tsym_list **initSymTable();
+-	bool addSym(Tsym_list **symTable, const char *data, const void *sym);
+-	bool delSym(Tsym_list **symTable, const char *data);
+-	const void *getSym(Tsym_list **symTable, const char *data);
++	Tsym_table *initSymTable(const unsigned int PRIME);
++	bool addSym(Tsym_table *symTable, const char *data, const void *sym);
++	bool delSym(Tsym_table *symTable, const char *data);
++	const void *getSym(Tsym_table *, const char *data);
+ 	uint32_t getHash(const char *data, size_t len);
+ #endif
+
+
+

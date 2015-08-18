@@ -1,0 +1,628 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Lea-svn] r107 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/lea-svn/2005-April/index.html" >
+   <LINK REL="made" HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r107%20-%20trunk&In-Reply-To=%3C200504111542.j3BFghaJ030983%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Lea-svn] r107 - trunk</H1>
+    <B>Eduardo Robles Elvira at BerliOS</B> 
+    <A HREF="mailto:lea-svn%40lists.berlios.de?Subject=Re%3A%20%5BLea-svn%5D%20r107%20-%20trunk&In-Reply-To=%3C200504111542.j3BFghaJ030983%40sheep.berlios.de%3E"
+       TITLE="[Lea-svn] r107 - trunk">edulix at sheep.berlios.de
+       </A><BR>
+    <I>Mon Apr 11 17:42:43 CEST 2005</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000007.html">[Lea-svn] r108 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: edulix
+Date: 2005-04-11 17:42:43 +0200 (Mon, 11 Apr 2005)
+New Revision: 107
+
+Modified:
+   trunk/COPYING
+   trunk/README
+   trunk/handy.awk
+   trunk/lea-translator.c
+   trunk/lea-translator.h
+   trunk/simple-script
+Log:
+Some minor typos fixed
+
+
+Modified: trunk/COPYING
+===================================================================
+--- trunk/COPYING	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/COPYING	2005-04-11 15:42:43 UTC (rev 107)
+@@ -295,8 +295,7 @@
+ 
+     This program is free software; you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+-    the Free Software Foundation; either version 2 of the License, or
+-    (at your option) any later version.
++    the Free Software Foundation; version 2 of the License.
+ 
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+
+Modified: trunk/README
+===================================================================
+--- trunk/README	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/README	2005-04-11 15:42:43 UTC (rev 107)
+@@ -3,7 +3,7 @@
+ <A HREF="http://sf.net/projects/lea">http://sf.net/projects/lea</A>
+ (c) Copyright 2005
+ 
+-Licenced under the GPL - see 'COPYING'
++Licenced under the GPL 2.0 - see 'COPYING'
+ 
+ 1. Goals
+ --------
+
+Modified: trunk/handy.awk
+===================================================================
+--- trunk/handy.awk	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/handy.awk	2005-04-11 15:42:43 UTC (rev 107)
+@@ -8,8 +8,8 @@
+ #  * This is part of Lea. Lea is free software; 
+ #  * you can redistribute it and/or
+ #  * modify it under the terms of the GNU General Public License
+-#  * as published by the Free Software Foundation; either version 2
+-#  * of the License, or (at your option) any later version.
++#  * as published by the Free Software Foundation; version 2
++#  * of the License.
+ #  * 
+ #  * Lea is distributed in the hope that it will be useful,
+ #  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+
+Modified: trunk/lea-translator.c
+===================================================================
+--- trunk/lea-translator.c	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/lea-translator.c	2005-04-11 15:42:43 UTC (rev 107)
+@@ -320,14 +320,24 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Allocate memory for an identifier list
+  * 
+- * \param		
+- * \return	 
++ * \param	previous_list	Previous list of identifiers
++ * \param	actual			Actual identifier
++ * \return					An identifier list 
+  */
+ Tid_list *TRid_list(Tid_list *previous_list, char *actual)
+ {
++	// Returning value
+ 	Tid_list *ret;
++	
++	// Allocate needed memory
++	ret				=	malloc(sizeof(Tid_list));
++	
++	// Initialization
++	
++	ret-&gt;actual 	=	actual;
++	ret-&gt;next		=	previous_list;
+ 
+ 	return ret;
+ }
+@@ -346,10 +356,11 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Allocate memory for an integer in a Tint_id_val struct
++ * Tint_id_val structures are used when either an integer or a variable call can be needed
+  * 
+- * \param		
+- * \return	 
++ * \param	value	Value to store
++ * \return	A 		Tint_id_val struct
+  */
+ Tint_id_val *TRint_id_val_int(int *value)
+ {
+@@ -658,15 +669,31 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Creates a sentence for a multiple assignation statement
+  * 
+- * \param		
+- * \return	 
++ * \param	var_list	List of variables to set
++ * \param	expr_list	List of expressions to use for the assignations
++ * \return				Return a multiple assgination statement sentence
+  */
+ Tsentence *TRmult_assign_statement(Tvar_sym_list *var_list, Texpr_list *expr_list)
+ {
+-	Tsentence *ret;
++	// Returning struct
++	Tsentence				*ret;
++	Tmult_assign_statement	*mult_assign_statement;
++	
++	// Allocate needed memory
++	ret						=	malloc(sizeof(Tsentence));
++	ret-&gt;type				=	malloc(sizeof(char));
++	
++	mult_assign_statement	=	malloc(sizeof(Tmult_assign_statement));
+ 
++	// Initialization
++//TODO: 	mult_assign_statement-&gt;sym_list	=	var_list;
++	mult_assign_statement-&gt;expr_list	=	expr_list;
++	
++	*(ret-&gt;type)						=	Vmult_assign_statement;
++	ret-&gt;sentence.mult_assign_statement	=	mult_assign_statement;
++	
+ 	return ret;
+ }
+ 
+@@ -684,15 +711,31 @@
+ }
+ 
+ /**
+- * \brief 
++ * \brief Creates a sentence for a while loop
+  * 
+- * \param		
+- * \return	 
++ * \param	expr_bool		Iteration condition
++ * \param	sentence_list	List of sentences to execute inside the loop
++ * \return					Return a while loop sentence
+  */
+ Tsentence *TRwhile_loop(Texpr_bool *expr_bool, Tsentence_list *sentence_list)
+ {
+-	Tsentence *ret;
+-
++	// Returning struct
++	Tsentence	*ret;
++	Twhile_loop	*while_loop;
++	
++	// Allocate needed memory
++	ret			=	malloc(sizeof(Tsentence));
++	ret-&gt;type	=	malloc(sizeof(char));
++	
++	while_loop	=	malloc(sizeof(Twhile_loop));
++	
++	// Initialization
++	while_loop-&gt;cond			=	expr_bool;
++	while_loop-&gt;sentence_list	=	sentence_list;
++	
++	*(ret-&gt;type)				=	Vwhile_loop;
++	ret-&gt;sentence.while_loop	=	while_loop;
++	
+ 	return ret;
+ }
+ 
+@@ -808,6 +851,7 @@
+  */
+ Tvar_sym_list *TRvariable_list_node(Tsentence *next_list)
+ {
++	
+ 	Tvar_sym_list *ret;
+ 
+ 	return ret;
+@@ -827,12 +871,12 @@
+ }
+ 
+ /**
+- * \brief Adds an element to a linked list of expresions
++ * \brief Adds an element to a linked list of expressions
+  * 
+- * \param	next_list	Existing linked list of expresions
++ * \param	next_list	Existing linked list of expressions
+  * \param	actual		Expresion element to add to the list
+  * \return				New linked list containing all the previous \
+- * expresions and the new one
++ * expressions and the new one
+  */
+ Texpr_list *TRexpr_list(Texpr_list *next_list, Texpr *actual)
+ {
+@@ -850,10 +894,10 @@
+ }
+ 
+ /**
+- * \brief Allocates storage for a boolean expresion value
++ * \brief Allocates storage for a boolean expression value
+  * 
+  * \param	bool_val	Value to preserve
+- * \return				Pointer to the expresion holding the given value
++ * \return				Pointer to the expression holding the given value
+  */
+ Texpr_bool *TRexpr_bool_val(bool *val)
+ {
+@@ -901,10 +945,10 @@
+ }
+ 
+ /**
+- * \brief Negates a boolean expresion
++ * \brief Negates a boolean expression
+  * 
+- * \param	expr_bool	Boolean expresion to negate
+- * \return				Returns a boolean expresion negating the given one
++ * \param	expr_bool	Boolean expression to negate
++ * \return				Returns a boolean expression negating the given one
+  */
+ Texpr_bool *TRexpr_bool_not(Texpr_bool *expr_bool)
+ {
+@@ -935,16 +979,16 @@
+  * \brief Allocates storage for a boolean operation with two boolean operands
+  *
+  * \param	type		Operation
+- * \param	left_expr	Left boolean expresion in the operation
+- * \param	right_expr	Right boolean expresion in the operation
++ * \param	left_expr	Left boolean expression in the operation
++ * \param	right_expr	Right boolean expression in the operation
+  * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool_log(char type, Texpr_bool *left_expr, Texpr_bool *right_expr)
+ {
+ 	// Returning struct
+-	Texpr_bool *ret;
++	Texpr_bool		*ret;
+ 	// Internal intermediate storage struct:
+-	Texpr_bool_op *expr_bool_op;
++	Texpr_bool_op	*expr_bool_op;
+ 	
+ 	// Allocate needed memory
+ 	ret					=	malloc(sizeof(Texpr_bool));
+@@ -976,16 +1020,16 @@
+  * \brief Allocates storage for a boolean operation with two operands
+  *
+  * \param	type		Operation
+- * \param	left_expr	Left expresion in the operation
+- * \param	right_expr	Right expresion in the operation
++ * \param	left_expr	Left expression in the operation
++ * \param	right_expr	Right expression in the operation
+  * \return				Pointer to the structure holding the boolean operation
+  */
+ Texpr_bool *TRexpr_bool(char type, Texpr *left_expr, Texpr *right_expr)
+ {
+ 	// Returning struct:
+-	Texpr_bool *ret;
++	Texpr_bool		*ret;
+ 	// Internal intermediate storage struct:
+-	Texpr_bool_op *expr_bool_op;
++	Texpr_bool_op	*expr_bool_op;
+ 	
+ 	// Allocate needed memory
+ 	ret			=	malloc(sizeof(Texpr_bool));
+@@ -1039,10 +1083,10 @@
+ }
+ 
+ /**
+- * \brief Allocates storage for an integer expresion value
++ * \brief Allocates storage for an integer expression value
+  * 
+  * \param	int_val	Value to preserve
+- * \return			Pointer to the expresion holding the given value
++ * \return			Pointer to the expression holding the given value
+  */
+ Texpr *TRexpr_int(int *int_val)
+ {
+@@ -1077,10 +1121,10 @@
+ }
+ 
+ /**
+- * \brief Allocates storage for a boolean expresion value
++ * \brief Allocates storage for a boolean expression value
+  *
+  * \param	bool_val	Value to preserve
+- * \return				Pointer to the expresion holding the given value
++ * \return				Pointer to the expression holding the given value
+  */
+ Texpr *TRexpr_expr_bool(bool *bool_val)
+ {
+@@ -1115,10 +1159,10 @@
+ }
+ 
+ /**
+- * \brief Allocates storage for a float expresion value
++ * \brief Allocates storage for a float expression value
+  *
+  * \param	float_val	Value to preserve
+- * \return				Pointer to the expresion holding the given value
++ * \return				Pointer to the expression holding the given value
+  */
+ Texpr *TRexpr_float(float *float_val)
+ {
+@@ -1153,10 +1197,10 @@
+ }
+ 
+ /**
+- * \brief Allocates storage for a str expresion value
++ * \brief Allocates storage for a str expression value
+  *
+  * \param	str	Value to preserve
+- * \return		Pointer to the expresion holding the given value
++ * \return		Pointer to the expression holding the given value
+  */
+ Texpr *TRexpr_str(char *str)
+ {
+@@ -1207,16 +1251,16 @@
+  * \brief Allocates storage for an operation with two operands
+  *
+  * \param	type		Operation
+- * \param	left_expr	Left expresion in the operation
+- * \param	right_expr	Right expresion in the operation
++ * \param	left_expr	Left expression in the operation
++ * \param	right_expr	Right expression in the operation
+  * \return				Pointer to the structure holding the operation
+  */
+ Texpr *TRexpr(char type, Texpr *left_expr, Texpr *right_expr)
+ {
+ 	// Returning struct:
+-	Texpr *ret;
++	Texpr		*ret;
+ 	// Internal intermediate storage struct:
+-	Texpr_op *expr_op;
++	Texpr_op	*expr_op;
+ 	
+ 	// Allocate needed memory
+ 	ret			=	malloc(sizeof(Texpr));
+
+Modified: trunk/lea-translator.h
+===================================================================
+--- trunk/lea-translator.h	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/lea-translator.h	2005-04-11 15:42:43 UTC (rev 107)
+@@ -115,8 +115,10 @@
+ 	#define OPop					69
+ 	#define OPvar_call				70
+ 	#define OParray_call			71
+-	#define OPmethod_call			72
+-	#define OPreserved_call			73
++	#define OPid_call				72
++	#define OPmethod_call			73
++	#define OPreserved_call			74
++	#define OPreg_call				75
+ 	
+ 	/****************************
+ 	*     Types definitions     *
+@@ -132,8 +134,10 @@
+ 	typedef struct Tother_type Tother_type;
+ 	typedef struct Tother_sym Tother_sym;
+ 	typedef struct Treg_type Treg_type;
++	typedef struct Treg_call Treg_call;
+ 	typedef struct Treg_sym Treg_sym;
+ 	typedef struct Texpr Texpr;
++	typedef struct Texpr_list Texpr_list;
+ 	typedef struct Texpr_bool_op Texpr_bool_op;
+ 	typedef struct Tmethod_call Tmethod_call;
+ 	typedef struct Tmethod_sym Tmethod_sym;
+@@ -326,7 +330,7 @@
+ 	 * Tother_sym *elements;.
+ 	 */
+ 	typedef struct {
+-		char *name; 
++		char *name;
+ 		// Array of pointers  (containing as many elements as the first dimension
+ 		// does) to sub-arrays or other types:
+ 		Tarray_type *type_sym; 
+@@ -335,6 +339,16 @@
+ 	} Tarray_sym;
+ 	
+ 	/**
++	 * \brief Tarray_call type definition
++	 * A call to an array need to store both the name of the indexes
++	 */
++	
++	typedef struct {
++		char *name;
++		Texpr_list *indexes;
++	} Tarray_call;
++	
++	/**
+ 	 * \brief Tfile_type type definition
+ 	 * Note that files and streams are used internally in this
+ 	 * implementation indistinctively
+@@ -402,7 +416,7 @@
+ 		} symbol;
+ 		char *type;
+ 		Tother_type *type_type;
+-	}; 
++	};
+ 	
+ 	/**
+ 	 * \brief Tother_type_list type definition
+@@ -425,6 +439,32 @@
+ 	};
+ 	
+ 	/**
++	 * \brief Tsym_call type definition
++	 * In this structure char *type can be:
++	 *  -  OParray_call (for expr_bool.array_call)
++	 *  -  OPid_call (for expr_bool.id_call)
++	 *  -  OPreg_call (for expr_bool.reg_call)
++	 */
++	typedef struct {
++		union {
++			Tarray_call *array_call;
++			char *id_call;
++			Treg_call *reg_call;
++		} call;
++		char *type;
++	} Tsym_call;
++	
++	/**
++	 * \brief Tsym_call_list type definition
++	 */
++	typedef struct Tsym_call_list Tsym_call_list;
++	
++	struct Tsym_call_list {
++		Tsym_call *actual;
++		Tsym_call_list *next;
++	};
++	
++	/**
+ 	 * \brief Treg_type_sym type definition
+ 	 */
+ 	typedef struct {
+@@ -448,25 +488,31 @@
+ 	 * stored as a Tvar_sym (to an integer var) and not 
+ 	 * as a Treg_call!
+ 	 */
+-	typedef union {
+-		char *name;
+-		Treg_sym *symbol;
+-	} Treg_call;
+ 	
++	struct Treg_call {
++		Tsym_call *actual;
++		Treg_call *next;
++	};
++	
+ 	/**
+ 	 * \brief expr_bool type definition
+ 	 * In this structure char *type can be:
+ 	 *  -  OPexpr_bool (for expr_bool.expr_bool)
+-	 *  -  OPvar_call (for expr_bool.var_call)
++	 *  -  OPvar_call (for expr_bool.var_call, note that this is used only to
++	 *                 store a boolean internal var)
+ 	 *  -  OParray_call (for expr_bool.array_call)
++	 *  -  OPid_call (for expr_bool.id_call)
+ 	 *  -  OPmethod_call (for expr_bool.method_call)
++	 *  -  OPreg_call (for expr_bool.reg_call)
+ 	 */
+ 	typedef struct {
+ 		union {
+ 			Texpr_bool_op *expr_bool;
+ 			Tvar_sym *var_call;
+-			Tarray_sym *array_call;
++			Tarray_call *array_call;
++			char *id_call;
+ 			Tmethod_call *method_call;
++			Treg_call *reg_call;
+ 		} expr_bool;
+ 		char *type;
+ 	} Texpr_bool;
+@@ -507,9 +553,12 @@
+ 	 * In this structure char *type can be:
+ 	 *  -  OPexpr_bool (for expr.expr_bool)
+ 	 *  -  OPexpr (for expr.expr)
+-	 *  -  OPvar_call (for expr.var_call)
++	 *  -  OPvar_call (for expr.var_call, note that this is used only to
++	 *                 store a boolean internal var)
+ 	 *  -  OParray_call (for expr.array_call)
++	 *  -  OPid_call (for expr_bool.id_call)
+ 	 *  -  OPmethod_call (for expr.method_call)
++	 *  -  OPreg_call (for expr.reg_call)
+ 	 */
+ 	struct Texpr {
+ 		char *type;
+@@ -517,8 +566,10 @@
+ 			Texpr_bool_op *expr_bool;
+ 			Texpr_op *expr;
+ 			Tvar_sym *var_call;
+-			Tarray_sym *array_call;
++			Tarray_call *array_call;
++			char *id_call;
+ 			Tmethod_call *method_call;
++			Treg_call *reg_call;
+ 		} expr;
+ 	};
+ 	
+@@ -633,14 +684,13 @@
+ 	 * \brief Tassign_statement type definition
+ 	 */
+ 	struct Tassign_statement {
+-		Tother_sym_list *sym_list;
++		Tsym_call_list *sym_list;
+ 		Texpr *expr;
+ 	};
+ 	 
+ 	/**
+ 	 * \brief Texpr_list type definition
+ 	 */
+-	typedef struct Texpr_list Texpr_list;
+ 	
+ 	struct Texpr_list {
+ 		Texpr *actual;
+@@ -651,7 +701,7 @@
+ 	 * \brief Tmult_assign_statement type definition
+ 	 */
+ 	struct Tmult_assign_statement {
+-		Tother_sym_list *sym_list;
++		Tsym_call_list *sym_list;
+ 		Texpr_list *expr_list;
+ 	};
+ 	
+@@ -852,12 +902,9 @@
+ 	Tassign_statement *TRfromto_assign_statement(Tsentence *, Texpr *); 
+ 	// fromto_loop: 
+ 	Tsentence *TRfromto_loop(Tassign_statement *, Texpr *, Tsentence_list *); 
+-	// TODO: is it correct to set this as  Tsentence *? function_call: 
+ 	Tsentence *TRfunction_call(char *, Texpr_list *); 
+-	// TODO: is it correct to set this as  Tsentence *? variable_call: 
+ 	Tsentence *TRvariable_call(char *, Texpr_list *); 
+ 	Tsentence *TRvariable_call_node(char *); 
+-	// TODO: is it correct to set this as  Tsentence *? struct_call: 
+ 	Tsentence *TRstruct_call(Tsentence *, Tsentence *);
+ 	Tsentence *TRstruct_call_node(Tsentence *);
+ 	// variable_list: 
+@@ -872,7 +919,7 @@
+ 	// expr_bool: 
+ 	Texpr_bool *TRexpr_bool_val(bool *); 
+ 	Texpr_bool *TRexpr_bool_struct(Tsentence *); 
+-// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, NULL);; 
++// 	Texpr_bool *TRexpr_bool(char, Texpr_bool *, NULL); 
+ 	Texpr_bool *TRexpr_bool_not(Texpr_bool *);  
+ 	Texpr_bool *TRexpr_bool_log(char, Texpr_bool *, Texpr_bool *); 
+ 	Texpr_bool *TRexpr_bool(char, Texpr *, Texpr *); 
+
+Modified: trunk/simple-script
+===================================================================
+--- trunk/simple-script	2005-03-22 12:23:27 UTC (rev 106)
++++ trunk/simple-script	2005-04-11 15:42:43 UTC (rev 107)
+@@ -73,7 +73,7 @@
+ 		var
+ 			i,j : entero
+ 		prin
+-			i, j := 1, 1
++			i := j := 1
+ 			
+ 			mientras i&lt;=long(t)
+ 				si t[i]=sep y i&gt;1:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000007.html">[Lea-svn] r108 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/lea-svn">More information about the Lea-svn
+mailing list</a><br>
+</body></html>
